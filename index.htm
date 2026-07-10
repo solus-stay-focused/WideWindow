@@ -521,6 +521,54 @@
     display:flex; gap:10px; align-items:center;
     padding:12px 16px; border-top:1px solid var(--line); flex-shrink:0;
   }
+  .chat-title-wrap{display:flex; flex-direction:column; min-width:0;}
+  .chat-subtitle{color:var(--slate); font-size:11px; margin-top:1px;}
+  .msg-sender{font-size:11px; font-weight:700; color:var(--brass); margin:0 0 3px 2px;}
+
+  /* ---- group creation modal ---- */
+  .group-modal{
+    display:none; flex-direction:column;
+    position:absolute; inset:0;
+    background:var(--ink);
+    z-index:11;
+  }
+  .group-modal.active{display:flex;}
+  .group-modal-topbar{
+    display:flex; align-items:center; gap:12px;
+    padding:14px 16px;
+    border-bottom:1px solid var(--line);
+    flex-shrink:0;
+  }
+  .group-modal-title{color:var(--ivory); font-weight:600; font-size:15px; flex:1;}
+  .group-modal-body{flex:1; overflow-y:auto; padding:20px;}
+  .group-modal-step{display:none;}
+  .group-modal-step.active{display:block; animation:rise .3s ease both;}
+  .group-modal-hint{font-size:13px; color:var(--slate); margin-bottom:16px;}
+  .group-modal-footer{
+    display:flex; gap:10px; justify-content:flex-end; align-items:center;
+    padding:14px 16px; border-top:1px solid var(--line); flex-shrink:0;
+  }
+  .group-modal-footer .footer-spacer{flex:1;}
+  .member-row .member-check{
+    width:20px; height:20px; border-radius:50%;
+    border:1.5px solid var(--line); flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    transition:border-color .2s ease, background .2s ease;
+    margin-left:auto;
+  }
+  .member-row.selected{border-color:var(--brass-soft);}
+  .member-row.selected .member-check{background:var(--brass); border-color:var(--brass);}
+  .member-row .member-check svg{width:12px; height:12px; stroke:#191305; opacity:0; transition:opacity .15s ease;}
+  .member-row.selected .member-check svg{opacity:1;}
+  .group-name-input{
+    width:100%; background:var(--panel); border:1.5px solid var(--line); border-radius:9px;
+    padding:12px 14px; color:var(--ivory); font-family:'Inter',sans-serif; font-size:15px; outline:none;
+    box-sizing:border-box;
+  }
+  .group-name-input:focus{border-color:var(--brass);}
+  .group-photo-step{display:flex; flex-direction:column; align-items:center; gap:14px; padding:10px 0 30px;}
+  .group-photo-hint{font-size:12px; color:var(--slate-dim); text-align:center; max-width:240px;}
+  .group-selected-count{font-size:12px; color:var(--slate); margin-left:4px;}
 
   /* ---- calls: incoming popup + active call overlay ---- */
   .incoming-call-overlay, .call-overlay{
@@ -712,11 +760,17 @@
 
     <!-- GROUPS TAB -->
     <div class="tab-panel" id="tabGroups">
-      <div class="tab-title">Groups</div>
-      <div class="empty-state">
-        <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="var(--slate-dim)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-        <p>No groups yet. Create or join one to start chatting.</p>
+      <div class="tab-title-row">
+        <button class="icon-btn" id="newGroupBtn" onclick="openGroupCreate()" title="New group">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+        </button>
+        <div class="tab-title">Groups</div>
       </div>
+      <div class="empty-state" id="groupsEmpty">
+        <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="var(--slate-dim)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <p>No groups yet. Create one to start chatting.</p>
+      </div>
+      <div class="contact-list" id="groupList"></div>
     </div>
 
     <!-- PROFILE TAB -->
@@ -788,8 +842,11 @@
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--ivory)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
       </button>
       <div class="chat-avatar" id="chatAvatar"></div>
-      <div class="chat-title" id="chatTitle">—</div>
-      <div class="chat-topbar-actions">
+      <div class="chat-title-wrap">
+        <div class="chat-title" id="chatTitle">—</div>
+        <div class="chat-subtitle" id="chatSubtitle" style="display:none;"></div>
+      </div>
+      <div class="chat-topbar-actions" id="chatTopbarActions">
         <button class="icon-btn" onclick="startCall('audio')" title="Audio call">
           <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="var(--ivory)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92Z"/></svg>
         </button>
@@ -804,6 +861,55 @@
       <button class="icon-btn send-btn" onclick="sendMessage()">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#191305" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/></svg>
       </button>
+    </div>
+  </div>
+
+  <!-- GROUP CREATION MODAL -->
+  <div class="group-modal" id="groupModal">
+    <div class="group-modal-topbar">
+      <button class="icon-btn" id="groupBackBtn" onclick="groupModalBack()" title="Back">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--ivory)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
+      <div class="group-modal-title" id="groupModalTitle">Add members</div>
+      <button class="icon-btn" onclick="cancelGroupCreate()" title="Cancel">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--ivory)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+    </div>
+
+    <div class="group-modal-body">
+      <!-- STEP 1: select members -->
+      <div class="group-modal-step active" id="groupStep1">
+        <div class="group-modal-hint">Choose who to add<span class="group-selected-count" id="groupSelectedCount"></span></div>
+        <div class="empty-state" id="groupMemberEmpty">
+          <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="var(--slate-dim)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <p>You need contacts before you can start a group. Add someone from the Contacts tab first.</p>
+        </div>
+        <div id="groupMemberList"></div>
+      </div>
+
+      <!-- STEP 2: group name -->
+      <div class="group-modal-step" id="groupStep2">
+        <div class="group-modal-hint">Give your group a name</div>
+        <input type="text" class="group-name-input" id="groupNameInput" maxlength="40" placeholder="Group name" oninput="updateGroupNextEnabled()">
+      </div>
+
+      <!-- STEP 3: group photo -->
+      <div class="group-modal-step" id="groupStep3">
+        <div class="group-modal-hint">Add a group photo — or skip</div>
+        <div class="group-photo-step">
+          <label class="avatar-slot" id="groupAvatarSlot" for="groupPhotoInput" style="cursor:pointer;">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </label>
+          <input type="file" id="groupPhotoInput" accept="image/*" style="display:none;" onchange="handleGroupPhoto(event)">
+          <div class="group-photo-hint">Tap the circle to choose an image, or continue without one.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="group-modal-footer">
+      <button class="ghost-btn small-btn" id="groupSkipBtn" onclick="skipGroupPhoto()" style="display:none;">Skip</button>
+      <div class="footer-spacer"></div>
+      <button class="primary-btn small-btn" id="groupNextBtn" onclick="groupModalNext()" disabled>Next</button>
     </div>
   </div>
 </div>
@@ -930,8 +1036,15 @@
   let activeChatConnId = null;
   let activeChatOtherUid = null;
   let activeChatOtherInfo = null;
+  let activeChatType = 'dm'; // 'dm' | 'group'
+  let activeGroupInfo = null;
   let activeChatUnsub = null;
   let contactsUnsub = null;
+  let groupsUnsub = null;
+  let contactsCache = []; // [{uid, info}] kept in sync by listenToContacts, used for group member picker
+  let groupSelectedMembers = new Map(); // uid -> info
+  let groupPhotoData = null;
+  let groupStepIndex = 1;
   let restoringSession = true; // true until the first auth-state check resolves
 
   // ---- calls ----
@@ -1159,6 +1272,7 @@
       document.getElementById('profileAvatar').innerHTML = html;
     }
     listenToContacts();
+    listenToGroups();
     listenForIncomingCalls();
   }
 
@@ -1228,6 +1342,7 @@
     if(btn){ btn.disabled = true; btn.textContent = 'Logging out…'; }
     try{
       if(contactsUnsub) contactsUnsub();
+      if(groupsUnsub) groupsUnsub();
       if(activeChatUnsub) activeChatUnsub();
       if(incomingCallsUnsub) incomingCallsUnsub();
       if(callState) hangupCall();
@@ -1511,11 +1626,13 @@
       }
       emptyEl.style.display = 'none';
       listEl.innerHTML = '';
+      contactsCache = [];
       snap.forEach(d => {
         const data = d.data();
         const otherUid = data.participants.find(p => p !== state.uid);
         const info = data.userInfo?.[otherUid];
         if(!info) return;
+        contactsCache.push({ uid: otherUid, info });
         const avatarHtml = info.photoURL
           ? `<img src="${info.photoURL}" alt="">`
           : `<svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
@@ -1532,15 +1649,54 @@
     }, (err) => console.error('Contacts listener failed:', err));
   }
 
+  // ---------------- GROUPS LIST (live) ----------------
+
+  function listenToGroups(){
+    if(!state.uid) return;
+    if(groupsUnsub) groupsUnsub();
+    const q = query(collection(db, 'groups'), where('members', 'array-contains', state.uid));
+    groupsUnsub = onSnapshot(q, (snap) => {
+      const listEl = document.getElementById('groupList');
+      const emptyEl = document.getElementById('groupsEmpty');
+      if(snap.empty){
+        listEl.innerHTML = '';
+        emptyEl.style.display = 'flex';
+        return;
+      }
+      emptyEl.style.display = 'none';
+      listEl.innerHTML = '';
+      snap.forEach(d => {
+        const data = d.data();
+        const avatarHtml = data.photoURL
+          ? `<img src="${data.photoURL}" alt="">`
+          : `<svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`;
+        const row = document.createElement('div');
+        row.className = 'contact-row';
+        row.innerHTML = `
+          <div class="contact-row-avatar">${avatarHtml}</div>
+          <div class="contact-row-info">
+            <div class="contact-row-name">${data.name || 'Group'}</div>
+            <div class="contact-row-id">${(data.members || []).length} members</div>
+          </div>`;
+        row.onclick = () => openGroupChat(d.id, data);
+        listEl.appendChild(row);
+      });
+    }, (err) => console.error('Groups listener failed:', err));
+  }
+
   // ---------------- CHAT / INBOX ----------------
 
   function openChat(connId, otherUid, otherInfo){
+    activeChatType = 'dm';
     activeChatConnId = connId;
     activeChatOtherUid = otherUid;
     activeChatOtherInfo = otherInfo;
+    activeGroupInfo = null;
     document.getElementById('chatTitle').textContent = '@' + otherInfo.username;
     document.getElementById('chatAvatar').innerHTML = otherInfo.photoURL
       ? `<img src="${otherInfo.photoURL}" alt="">` : '';
+    document.getElementById('chatSubtitle').style.display = 'none';
+    document.getElementById('chatTopbarActions').style.display = 'flex';
     document.getElementById('chatOverlay').classList.add('active');
     document.getElementById('chatMessages').innerHTML = `<div class="chat-empty">Loading messages…</div>`;
 
@@ -1565,10 +1721,61 @@
   }
   window.openChat = openChat;
 
+  // ---------------- GROUP CHAT ----------------
+
+  function openGroupChat(groupId, groupData){
+    activeChatType = 'group';
+    activeChatConnId = groupId;
+    activeChatOtherUid = null;
+    activeChatOtherInfo = null;
+    activeGroupInfo = groupData;
+    document.getElementById('chatTitle').textContent = groupData.name || 'Group';
+    document.getElementById('chatAvatar').innerHTML = groupData.photoURL
+      ? `<img src="${groupData.photoURL}" alt="">`
+      : `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--slate-dim)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="margin:8px;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`;
+    const sub = document.getElementById('chatSubtitle');
+    sub.textContent = (groupData.members || []).length + ' members';
+    sub.style.display = 'block';
+    // Group calling isn't supported yet, so hide the 1:1 call buttons here.
+    document.getElementById('chatTopbarActions').style.display = 'none';
+    document.getElementById('chatOverlay').classList.add('active');
+    document.getElementById('chatMessages').innerHTML = `<div class="chat-empty">Loading messages…</div>`;
+
+    if(activeChatUnsub) activeChatUnsub();
+    const q = query(collection(db, 'groups', groupId, 'messages'), orderBy('createdAt', 'asc'));
+    activeChatUnsub = onSnapshot(q, (snap) => {
+      const box = document.getElementById('chatMessages');
+      if(snap.empty){
+        box.innerHTML = `<div class="chat-empty">Say hello — this is the start of your group.</div>`;
+        return;
+      }
+      box.innerHTML = '';
+      snap.forEach(d => {
+        const m = d.data();
+        const mine = m.senderUid === state.uid;
+        if(!mine){
+          const senderInfo = activeGroupInfo?.memberInfo?.[m.senderUid];
+          const label = document.createElement('div');
+          label.className = 'msg-sender';
+          label.textContent = senderInfo ? (senderInfo.nickname || senderInfo.username) : 'Member';
+          box.appendChild(label);
+        }
+        const bubble = document.createElement('div');
+        bubble.className = 'msg-bubble ' + (mine ? 'mine' : 'theirs');
+        bubble.textContent = m.text;
+        box.appendChild(bubble);
+      });
+      box.scrollTop = box.scrollHeight;
+    }, (err) => console.error('Group chat listener failed:', err));
+  }
+  window.openGroupChat = openGroupChat;
+
   function closeChat(){
     document.getElementById('chatOverlay').classList.remove('active');
     if(activeChatUnsub){ activeChatUnsub(); activeChatUnsub = null; }
     activeChatConnId = null;
+    activeGroupInfo = null;
+    activeChatType = 'dm';
   }
   window.closeChat = closeChat;
 
@@ -1578,7 +1785,8 @@
     if(!text || !activeChatConnId) return;
     input.value = '';
     try{
-      await addDoc(collection(db, 'connections', activeChatConnId, 'messages'), {
+      const parentCollection = activeChatType === 'group' ? 'groups' : 'connections';
+      await addDoc(collection(db, parentCollection, activeChatConnId, 'messages'), {
         senderUid: state.uid,
         text: text,
         createdAt: serverTimestamp()
@@ -1589,6 +1797,181 @@
     }
   }
   window.sendMessage = sendMessage;
+
+  // ---------------- GROUP CREATION FLOW ----------------
+  //
+  // Data model in Firestore:
+  //   groups/{groupId}   { name, photoURL, members: [uid...],
+  //                         memberInfo: { uid: {username,nickname,photoURL} },
+  //                         createdBy, createdAt }
+  //   groups/{groupId}/messages/{auto}   { senderUid, text, createdAt }
+
+  function openGroupCreate(){
+    groupSelectedMembers = new Map();
+    groupPhotoData = null;
+    document.getElementById('groupNameInput').value = '';
+    const slot = document.getElementById('groupAvatarSlot');
+    slot.classList.remove('filled');
+    slot.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`;
+    renderGroupMemberList();
+    goToGroupStep(1);
+    document.getElementById('groupModal').classList.add('active');
+  }
+  window.openGroupCreate = openGroupCreate;
+
+  function cancelGroupCreate(){
+    document.getElementById('groupModal').classList.remove('active');
+  }
+  window.cancelGroupCreate = cancelGroupCreate;
+
+  function renderGroupMemberList(){
+    const listEl = document.getElementById('groupMemberList');
+    const emptyEl = document.getElementById('groupMemberEmpty');
+    listEl.innerHTML = '';
+    if(contactsCache.length === 0){
+      emptyEl.style.display = 'flex';
+      return;
+    }
+    emptyEl.style.display = 'none';
+    contactsCache.forEach(({ uid, info }) => {
+      const avatarHtml = info.photoURL
+        ? `<img src="${info.photoURL}" alt="">`
+        : `<svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+      const row = document.createElement('div');
+      row.className = 'contact-row member-row';
+      row.innerHTML = `
+        <div class="contact-row-avatar">${avatarHtml}</div>
+        <div class="contact-row-info">
+          <div class="contact-row-name">${info.nickname || info.username}</div>
+        </div>
+        <div class="member-check"><svg viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>`;
+      row.onclick = () => toggleGroupMember(uid, info, row);
+      listEl.appendChild(row);
+    });
+  }
+
+  function toggleGroupMember(uid, info, row){
+    if(groupSelectedMembers.has(uid)){
+      groupSelectedMembers.delete(uid);
+      row.classList.remove('selected');
+    } else {
+      groupSelectedMembers.set(uid, info);
+      row.classList.add('selected');
+    }
+    const countEl = document.getElementById('groupSelectedCount');
+    countEl.textContent = groupSelectedMembers.size > 0 ? ` · ${groupSelectedMembers.size} selected` : '';
+    updateGroupNextEnabled();
+  }
+
+  function updateGroupNextEnabled(){
+    const btn = document.getElementById('groupNextBtn');
+    if(groupStepIndex === 1){
+      btn.disabled = groupSelectedMembers.size === 0;
+    } else if(groupStepIndex === 2){
+      btn.disabled = document.getElementById('groupNameInput').value.trim().length === 0;
+    } else {
+      btn.disabled = false;
+    }
+  }
+  window.updateGroupNextEnabled = updateGroupNextEnabled;
+
+  function goToGroupStep(n){
+    groupStepIndex = n;
+    document.querySelectorAll('.group-modal-step').forEach(el => el.classList.remove('active'));
+    document.getElementById('groupStep' + n).classList.add('active');
+    document.getElementById('groupBackBtn').style.display = n === 1 ? 'none' : 'flex';
+    document.getElementById('groupSkipBtn').style.display = n === 3 ? 'inline-block' : 'none';
+    const titles = { 1: 'Add members', 2: 'Name your group', 3: 'Group photo' };
+    document.getElementById('groupModalTitle').textContent = titles[n];
+    const nextBtn = document.getElementById('groupNextBtn');
+    nextBtn.textContent = n === 3 ? 'Create' : 'Next';
+    updateGroupNextEnabled();
+  }
+
+  function groupModalBack(){
+    if(groupStepIndex > 1) goToGroupStep(groupStepIndex - 1);
+  }
+  window.groupModalBack = groupModalBack;
+
+  function groupModalNext(){
+    if(groupStepIndex === 1){
+      if(groupSelectedMembers.size === 0) return;
+      goToGroupStep(2);
+    } else if(groupStepIndex === 2){
+      if(document.getElementById('groupNameInput').value.trim().length === 0) return;
+      goToGroupStep(3);
+    } else {
+      createGroup();
+    }
+  }
+  window.groupModalNext = groupModalNext;
+
+  function skipGroupPhoto(){
+    groupPhotoData = null;
+    createGroup();
+  }
+  window.skipGroupPhoto = skipGroupPhoto;
+
+  function handleGroupPhoto(e){
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const img = new Image();
+      img.onload = () => {
+        // Downscale to keep the group doc well under Firestore's 1MB limit.
+        const maxDim = 200;
+        const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        groupPhotoData = canvas.toDataURL('image/jpeg', 0.82);
+        const slot = document.getElementById('groupAvatarSlot');
+        slot.innerHTML = `<img src="${groupPhotoData}" alt="Group photo">`;
+        slot.classList.add('filled');
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+  window.handleGroupPhoto = handleGroupPhoto;
+
+  async function createGroup(){
+    const nextBtn = document.getElementById('groupNextBtn');
+    const skipBtn = document.getElementById('groupSkipBtn');
+    if(nextBtn){ nextBtn.disabled = true; nextBtn.textContent = 'Creating…'; }
+    if(skipBtn){ skipBtn.disabled = true; }
+    try{
+      const name = document.getElementById('groupNameInput').value.trim();
+      const members = [state.uid, ...groupSelectedMembers.keys()];
+      const memberInfo = {
+        [state.uid]: { username: state.username, nickname: state.nickname || state.username, photoURL: state.photo }
+      };
+      groupSelectedMembers.forEach((info, uid) => {
+        memberInfo[uid] = { username: info.username, nickname: info.nickname || info.username, photoURL: info.photoURL || null };
+      });
+
+      const groupRef = await addDoc(collection(db, 'groups'), {
+        name,
+        photoURL: groupPhotoData || null,
+        members,
+        memberInfo,
+        createdBy: state.uid,
+        createdAt: new Date().toISOString()
+      });
+
+      cancelGroupCreate();
+      openGroupChat(groupRef.id, { name, photoURL: groupPhotoData || null, members, memberInfo });
+    } catch(err){
+      console.error('Create group failed:', err);
+      alert('Could not create group: ' + err.message);
+    } finally {
+      if(nextBtn){ nextBtn.disabled = false; nextBtn.textContent = groupStepIndex === 3 ? 'Create' : 'Next'; }
+      if(skipBtn){ skipBtn.disabled = false; }
+    }
+  }
 
   // ---------------- CALLS (WebRTC + Firestore signaling) ----------------
   //
