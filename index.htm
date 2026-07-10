@@ -1078,7 +1078,7 @@
             <div class="result-name">@${data.username}</div>
             <div class="result-id">${formatId(data.userId)}</div>
           </div>
-          <button class="connect-btn" id="connectBtn">Connect</button>
+          <button class="connect-btn" id="connectBtn">Add contact</button>
         </div>`;
 
       document.getElementById('connectBtn').onclick = () => connectWithUser(otherUid, data);
@@ -1095,7 +1095,7 @@
 
   async function connectWithUser(otherUid, otherData){
     const btn = document.getElementById('connectBtn');
-    if(btn){ btn.disabled = true; btn.textContent = 'Connecting…'; }
+    if(btn){ btn.disabled = true; btn.textContent = 'Adding…'; }
     try{
       const connId = connIdFor(state.uid, otherUid);
       const myInfo = { username: state.username, photoURL: state.photo, userId: state.userId };
@@ -1113,8 +1113,8 @@
       openChat(connId, otherUid, theirInfo);
     } catch(err){
       console.error('Connect failed:', err);
-      if(btn){ btn.disabled = false; btn.textContent = 'Connect'; }
-      alert('Could not connect: ' + err.message);
+      if(btn){ btn.disabled = false; btn.textContent = 'Add contact'; }
+      alert('Could not add contact: ' + err.message);
     }
   }
 
