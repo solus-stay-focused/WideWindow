@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Access — Onboarding</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#12141c;
+    --panel:#191c27;
+    --panel-raised:#20232f;
+    --brass:#c9a227;
+    --brass-soft:#8a7530;
+    --ivory:#f1ede4;
+    --slate:#8b90a3;
+    --slate-dim:#565a6c;
+    --line:#2c3040;
+    --good:#6fcf97;
+    --bad:#e2735a;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--ink);
+    background-image:
+      radial-gradient(circle at 15% 10%, rgba(201,162,39,0.06), transparent 45%),
+      radial-gradient(circle at 85% 90%, rgba(201,162,39,0.05), transparent 40%);
+    color:var(--ivory);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:32px 20px;
+  }
+  .stage{
+    width:100%;
+    max-width:920px;
+    display:grid;
+    grid-template-columns:300px 1fr;
+    gap:48px;
+    align-items:start;
+  }
+  @media (max-width:760px){
+    .stage{grid-template-columns:1fr; gap:32px;}
+    .card-wrap{order:2;}
+    .panel-wrap{order:1;}
+  }
+
+  /* ---------- KEYCARD ---------- */
+  .card-wrap{position:sticky; top:32px; display:flex; flex-direction:column; align-items:center; gap:14px;}
+  .card{
+    width:260px;
+    height:388px;
+    border-radius:18px;
+    background:linear-gradient(165deg,#1d202c 0%, #14161f 100%);
+    border:1px solid var(--line);
+    position:relative;
+    padding:22px;
+    display:flex;
+    flex-direction:column;
+    box-shadow:0 24px 60px -20px rgba(0,0,0,0.7);
+    transition:box-shadow .4s ease, border-color .4s ease;
+  }
+  .card.lit{border-color:rgba(201,162,39,0.5); box-shadow:0 24px 60px -16px rgba(201,162,39,0.18), 0 24px 60px -20px rgba(0,0,0,0.7);}
+  .card::before{
+    content:"";
+    position:absolute; inset:0;
+    border-radius:18px;
+    padding:1px;
+    background:linear-gradient(135deg, rgba(201,162,39,0.35), transparent 40%);
+    -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor; mask-composite:exclude;
+    pointer-events:none;
+  }
+  .card-top{display:flex; justify-content:space-between; align-items:flex-start;}
+  .card-mark{font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:2px; color:var(--brass); text-transform:uppercase;}
+  .card-status{font-family:'JetBrains Mono',monospace; font-size:9px; letter-spacing:1.5px; color:var(--slate-dim); text-transform:uppercase;}
+  .card-status.active{color:var(--good);}
+
+  .avatar-slot{
+    width:88px; height:88px; border-radius:50%;
+    margin:22px auto 6px;
+    background:var(--panel-raised);
+    border:1.5px dashed var(--line);
+    display:flex; align-items:center; justify-content:center;
+    overflow:hidden;
+    transition:border-color .3s ease;
+  }
+  .avatar-slot.filled{border-style:solid; border-color:var(--brass);}
+  .avatar-slot img{width:100%; height:100%; object-fit:cover;}
+  .avatar-slot svg{width:30px; height:30px; stroke:var(--slate-dim);}
+
+  .card-name{
+    text-align:center;
+    font-family:'Fraunces',serif;
+    font-size:20px;
+    font-weight:500;
+    min-height:26px;
+    color:var(--ivory);
+    letter-spacing:0.2px;
+  }
+  .card-name.placeholder{color:var(--slate-dim); font-style:italic; font-size:15px;}
+
+  .card-sub{
+    text-align:center;
+    font-family:'JetBrains Mono',monospace;
+    font-size:10px;
+    color:var(--slate);
+    letter-spacing:1px;
+    margin-top:4px;
+  }
+
+  .card-spacer{flex:1;}
+
+  .card-divider{height:1px; background:var(--line); margin:14px 0 12px;}
+
+  .card-footer{display:flex; justify-content:space-between; align-items:center;}
+  .card-id{font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--slate-dim); letter-spacing:1px;}
+  .punches{display:flex; gap:5px;}
+  .punch{width:7px; height:7px; border-radius:50%; background:var(--line); transition:background .3s ease, box-shadow .3s ease;}
+  .punch.done{background:var(--brass); box-shadow:0 0 6px rgba(201,162,39,0.6);}
+
+  .card-caption{font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--slate-dim); letter-spacing:1.5px; text-transform:uppercase;}
+
+  /* ---------- PANEL ---------- */
+  .panel-wrap{width:100%;}
+  .eyebrow{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    letter-spacing:3px;
+    text-transform:uppercase;
+    color:var(--brass);
+    margin-bottom:10px;
+  }
+  h1{
+    font-family:'Fraunces',serif;
+    font-weight:500;
+    font-size:32px;
+    line-height:1.15;
+    margin:0 0 10px;
+    color:var(--ivory);
+  }
+  .lede{color:var(--slate); font-size:15px; line-height:1.55; margin:0 0 30px; max-width:420px;}
+
+  .step{display:none; flex-direction:column; gap:18px;}
+  .step.active{display:flex; animation:rise .45s ease both;}
+  @keyframes rise{from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);}}
+
+  /* google button */
+  .g-btn{
+    display:flex; align-items:center; justify-content:center; gap:12px;
+    background:var(--ivory); color:#1a1a1a;
+    border:none; border-radius:10px;
+    padding:15px 20px;
+    font-family:'Inter',sans-serif; font-size:15px; font-weight:600;
+    cursor:pointer; max-width:340px;
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .g-btn:hover{transform:translateY(-1px); box-shadow:0 10px 24px -8px rgba(241,237,228,0.25);}
+  .g-btn:active{transform:translateY(0);}
+  .g-btn.loading{pointer-events:none; opacity:0.75;}
+  .g-btn svg{width:19px; height:19px;}
+
+  .fine{font-size:12px; color:var(--slate-dim); max-width:340px; line-height:1.5;}
+
+  /* code entry */
+  .code-row{display:flex; gap:8px; flex-wrap:wrap;}
+  .code-box{
+    width:38px; height:50px;
+    background:var(--panel);
+    border:1.5px solid var(--line);
+    border-radius:8px;
+    text-align:center;
+    font-family:'JetBrains Mono',monospace;
+    font-size:19px;
+    color:var(--ivory);
+    outline:none;
+    transition:border-color .2s ease, background .2s ease;
+  }
+  .code-box:focus{border-color:var(--brass); background:var(--panel-raised);}
+  .code-box.filled{border-color:var(--brass-soft);}
+  .code-msg{font-size:13px; min-height:18px; font-family:'Inter',sans-serif;}
+  .code-msg.err{color:var(--bad);}
+  .code-msg.ok{color:var(--good);}
+
+  /* profile form */
+  .field{display:flex; flex-direction:column; gap:8px; max-width:340px;}
+  .field label{font-size:12px; letter-spacing:1px; text-transform:uppercase; color:var(--slate); font-family:'JetBrains Mono',monospace;}
+  .field input[type=text]{
+    background:var(--panel);
+    border:1.5px solid var(--line);
+    border-radius:9px;
+    padding:13px 14px;
+    color:var(--ivory);
+    font-family:'Inter',sans-serif;
+    font-size:15px;
+    outline:none;
+    transition:border-color .2s ease;
+  }
+  .field input[type=text]:focus{border-color:var(--brass);}
+  .avail{font-size:12px; font-family:'JetBrains Mono',monospace;}
+  .avail.ok{color:var(--good);}
+  .avail.bad{color:var(--bad);}
+
+  .upload-row{display:flex; align-items:center; gap:16px;}
+  .upload-btn{
+    background:var(--panel);
+    border:1.5px solid var(--line);
+    border-radius:9px;
+    padding:11px 18px;
+    color:var(--ivory);
+    font-family:'Inter',sans-serif; font-size:13px; font-weight:600;
+    cursor:pointer;
+    transition:border-color .2s ease;
+  }
+  .upload-btn:hover{border-color:var(--brass-soft);}
+
+  .primary-btn{
+    background:var(--brass);
+    color:#191305;
+    border:none; border-radius:10px;
+    padding:14px 26px;
+    font-family:'Inter',sans-serif; font-size:15px; font-weight:700;
+    cursor:pointer; max-width:220px;
+    transition:transform .15s ease, filter .15s ease;
+  }
+  .primary-btn:hover:not(:disabled){transform:translateY(-1px); filter:brightness(1.08);}
+  .primary-btn:disabled{opacity:0.35; cursor:not-allowed;}
+
+  .ghost-note{display:flex; align-items:center; gap:10px; font-size:13px; color:var(--slate); font-family:'Inter',sans-serif;}
+  .ghost-note svg{width:16px; height:16px; stroke:var(--good); flex-shrink:0;}
+
+  /* done screen */
+  .done-icon{width:52px; height:52px; border-radius:50%; background:rgba(111,207,151,0.12); display:flex; align-items:center; justify-content:center; margin-bottom:6px;}
+  .done-icon svg{width:24px; height:24px; stroke:var(--good);}
+
+  input[type=file]{display:none;}
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <div class="card-wrap">
+    <div class="card" id="card">
+      <div class="card-top">
+        <span class="card-mark">Access</span>
+        <span class="card-status" id="cardStatus">Unverified</span>
+      </div>
+      <div class="avatar-slot" id="avatarSlot">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </div>
+      <div class="card-name placeholder" id="cardName">Your name</div>
+      <div class="card-sub" id="cardSub">— — — — — — — — — —</div>
+      <div class="card-spacer"></div>
+      <div class="card-divider"></div>
+      <div class="card-footer">
+        <span class="card-id" id="cardId">ID · PENDING</span>
+        <div class="punches" id="punches">
+          <div class="punch" id="p1"></div>
+          <div class="punch" id="p2"></div>
+          <div class="punch" id="p3"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-caption" id="cardCaption">Step 1 of 3 — Connect</div>
+  </div>
+
+  <div class="panel-wrap">
+
+    <!-- STEP 1: GOOGLE -->
+    <div class="step active" id="step1">
+      <div class="eyebrow">01 — Connect</div>
+      <h1>Let's confirm it's you.</h1>
+      <p class="lede">Sign in with Google to start building your profile. This is a demo flow — no real Google account is contacted.</p>
+      <button class="g-btn" id="googleBtn" onclick="handleGoogle()">
+        <svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.6-6 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 3l6-6C34.6 5.1 29.6 3 24 3 12.4 3 3 12.4 3 24s9.4 21 21 21 21-9.4 21-21c0-1.4-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 15.9 18.9 13 24 13c3.1 0 5.8 1.1 8 3l6-6C34.6 5.1 29.6 3 24 3 16 3 9 7.4 6.3 14.7z"/><path fill="#4CAF50" d="M24 45c5.5 0 10.4-1.9 14.2-5.1l-6.6-5.4C29.6 36.2 27 37 24 37c-5.2 0-9.6-3.4-11.2-8.1l-6.6 5.1C9 40.6 16 45 24 45z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.2 4.3-4.1 5.6l6.6 5.4C41.6 35.6 45 30.3 45 24c0-1.4-.1-2.4-.4-3.5z"/></svg>
+        <span id="googleBtnText">Continue with Google</span>
+      </button>
+      <p class="fine">By continuing you agree this is a sample onboarding flow built for demonstration purposes.</p>
+    </div>
+
+    <!-- STEP 2: CODE -->
+    <div class="step" id="step2">
+      <div class="eyebrow">02 — Access code</div>
+      <h1>Enter your 10-digit code.</h1>
+      <p class="lede">You should have received this from whoever invited you. Try any 10 digits — codes starting with <strong>0</strong> are treated as invalid for this demo.</p>
+      <div class="code-row" id="codeRow"></div>
+      <div class="code-msg" id="codeMsg"></div>
+      <button class="primary-btn" id="codeBtn" disabled onclick="handleCode()">Verify code</button>
+    </div>
+
+    <!-- STEP 3: PROFILE -->
+    <div class="step" id="step3">
+      <div class="eyebrow">03 — Your profile</div>
+      <h1>Set your face and name.</h1>
+      <p class="lede">This is what other people will see. You can always change it later.</p>
+
+      <div class="field">
+        <label>Profile picture</label>
+        <div class="upload-row">
+          <div class="avatar-slot" id="avatarSlotSmall" style="width:64px; height:64px; margin:0;">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <label class="upload-btn" for="fileInput">Upload photo</label>
+          <input type="file" id="fileInput" accept="image/*" onchange="handlePhoto(event)">
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="usernameInput">Username</label>
+        <input type="text" id="usernameInput" placeholder="e.g. maya_writes" maxlength="20" oninput="handleUsername()">
+        <div class="avail" id="avail"></div>
+      </div>
+
+      <button class="primary-btn" id="finishBtn" disabled onclick="handleFinish()">Create profile</button>
+    </div>
+
+    <!-- STEP 4: DONE -->
+    <div class="step" id="step4">
+      <div class="done-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+      </div>
+      <div class="eyebrow">Complete</div>
+      <h1 id="doneHeadline">You're in.</h1>
+      <p class="lede" id="doneSub">Your profile has been created. The card on the left is now yours.</p>
+      <div class="ghost-note">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+        <span>Google account connected</span>
+      </div>
+      <div class="ghost-note">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+        <span>Access code verified</span>
+      </div>
+      <div class="ghost-note">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+        <span id="doneUsernameNote">Profile ready</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!--
+  ══════════════════════════════════════════════════════════════════
+  FIREBASE SETUP — required before this will actually work
+  ══════════════════════════════════════════════════════════════════
+  1. Go to console.firebase.google.com → create/open a project.
+  2. Build > Authentication > Sign-in method > enable "Google".
+  3. Project settings > General > "Your apps" > add a Web app,
+     copy the firebaseConfig object into the block below.
+  4. Authentication > Settings > Authorized domains > add the domain
+     you'll actually host this file on (e.g. localhost, or your
+     production domain). Google's sign-in popup will silently fail
+     on any domain not in this list — this is why it won't work
+     inside a chat preview iframe, only once you host it yourself.
+  5. (Optional, for saving usernames) Build > Firestore Database >
+     create a database, then add a rule allowing signed-in users to
+     write their own doc, e.g.:
+       match /users/{uid} { allow read, write: if request.auth.uid == uid; }
+  ══════════════════════════════════════════════════════════════════
+-->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT.firebaseapp.com",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const provider = new GoogleAuthProvider();
+
+  const state = { uid:null, name:"", email:"", code:"", username:"", photo:null };
+
+  // build code boxes
+  const codeRow = document.getElementById('codeRow');
+  for(let i=0;i<10;i++){
+    const inp = document.createElement('input');
+    inp.type='text'; inp.maxLength=1; inp.className='code-box'; inp.inputMode='numeric';
+    inp.dataset.i=i;
+    inp.addEventListener('input', (e)=>{
+      e.target.value = e.target.value.replace(/[^0-9]/g,'');
+      if(e.target.value) e.target.classList.add('filled'); else e.target.classList.remove('filled');
+      if(e.target.value && i<9) codeRow.children[i+1].focus();
+      updateCodeState();
+    });
+    inp.addEventListener('keydown', (e)=>{
+      if(e.key==='Backspace' && !e.target.value && i>0) codeRow.children[i-1].focus();
+    });
+    codeRow.appendChild(inp);
+  }
+
+  function updateCodeState(){
+    const vals = [...codeRow.children].map(c=>c.value);
+    const btn = document.getElementById('codeBtn');
+    btn.disabled = vals.some(v=>v==='');
+    document.getElementById('codeMsg').textContent='';
+    document.getElementById('codeMsg').className='code-msg';
+  }
+
+  function setPunch(n){
+    for(let i=1;i<=3;i++){
+      document.getElementById('p'+i).classList.toggle('done', i<=n);
+    }
+  }
+
+  function showStep(n){
+    document.querySelectorAll('.step').forEach(s=>s.classList.remove('active'));
+    document.getElementById('step'+n).classList.add('active');
+    const captions = {1:'Step 1 of 3 — Connect',2:'Step 2 of 3 — Verify',3:'Step 3 of 3 — Personalize',4:'Setup complete'};
+    document.getElementById('cardCaption').textContent = captions[n];
+  }
+
+  async function handleGoogle(){
+    const btn = document.getElementById('googleBtn');
+    btn.classList.add('loading');
+    document.getElementById('googleBtnText').textContent = 'Connecting…';
+    try{
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      state.uid = user.uid;
+      state.name = user.displayName || '';
+      state.email = user.email || '';
+      // Pre-fill the card with the real Google account name/photo.
+      if(user.photoURL){
+        const html = `<img src="${user.photoURL}" alt="Profile photo">`;
+        document.getElementById('avatarSlot').innerHTML = html;
+        document.getElementById('avatarSlot').classList.add('filled');
+        document.getElementById('avatarSlotSmall').innerHTML = html;
+        document.getElementById('avatarSlotSmall').classList.add('filled');
+        state.photo = user.photoURL;
+      }
+      document.getElementById('cardStatus').textContent = 'Connected';
+      document.getElementById('cardStatus').classList.add('active');
+      document.getElementById('card').classList.add('lit');
+      document.getElementById('cardId').textContent = 'ID · ' + user.uid.slice(0,8).toUpperCase();
+      setPunch(1);
+      showStep(2);
+      setTimeout(()=>codeRow.children[0].focus(), 300);
+    } catch(err){
+      console.error(err);
+      document.getElementById('googleBtnText').textContent = 'Continue with Google';
+      alert('Sign-in failed: ' + err.message + '\n\nMake sure this domain is added under Authentication > Settings > Authorized domains in your Firebase project.');
+    } finally {
+      btn.classList.remove('loading');
+    }
+  }
+
+  function handleCode(){
+    const vals = [...codeRow.children].map(c=>c.value);
+    const code = vals.join('');
+    const msg = document.getElementById('codeMsg');
+    if(code.startsWith('0')){
+      msg.textContent = 'That code isn\'t valid. Double-check it and try again.';
+      msg.className = 'code-msg err';
+      codeRow.classList.add('shake');
+      return;
+    }
+    state.code = code;
+    msg.textContent = 'Code verified.';
+    msg.className = 'code-msg ok';
+    document.getElementById('cardSub').textContent = code.slice(0,3)+' •• •• •• ••';
+    setPunch(2);
+    setTimeout(()=>showStep(3), 500);
+  }
+
+  function handlePhoto(e){
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev)=>{
+      state.photo = ev.target.result;
+      const html = `<img src="${ev.target.result}" alt="Profile photo">`;
+      document.getElementById('avatarSlot').innerHTML = html;
+      document.getElementById('avatarSlot').classList.add('filled');
+      document.getElementById('avatarSlotSmall').innerHTML = html;
+      document.getElementById('avatarSlotSmall').classList.add('filled');
+      checkProfileReady();
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function handleUsername(){
+    const val = document.getElementById('usernameInput').value.trim();
+    const avail = document.getElementById('avail');
+    state.username = val;
+    if(val.length===0){
+      avail.textContent=''; avail.className='avail';
+    } else if(val.length<3){
+      avail.textContent='Too short — use at least 3 characters'; avail.className='avail bad';
+    } else if(!/^[a-z0-9_]+$/i.test(val)){
+      avail.textContent='Letters, numbers and underscores only'; avail.className='avail bad';
+    } else if(val.toLowerCase()==='admin'){
+      avail.textContent='That username is taken'; avail.className='avail bad';
+    } else {
+      avail.textContent='@'+val.toLowerCase()+' is available'; avail.className='avail ok';
+      document.getElementById('cardName').textContent = val;
+      document.getElementById('cardName').classList.remove('placeholder');
+    }
+    checkProfileReady();
+  }
+
+  function checkProfileReady(){
+    const valid = state.username.length>=3 && /^[a-z0-9_]+$/i.test(state.username) && state.username.toLowerCase()!=='admin' && state.photo;
+    document.getElementById('finishBtn').disabled = !valid;
+  }
+
+  async function handleFinish(){
+    const finishBtn = document.getElementById('finishBtn');
+    finishBtn.disabled = true;
+    finishBtn.textContent = 'Saving…';
+    try{
+      if(state.uid){
+        await setDoc(doc(db, 'users', state.uid), {
+          username: state.username.toLowerCase(),
+          email: state.email,
+          accessCodeVerified: true,
+          photoURL: state.photo,
+          createdAt: new Date().toISOString()
+        });
+      }
+      setPunch(3);
+      document.getElementById('cardId').textContent = 'ID · '+ (state.uid ? state.uid.slice(0,8).toUpperCase() : Math.random().toString(36).slice(2,8).toUpperCase());
+      document.getElementById('doneHeadline').textContent = 'Welcome, ' + state.username + '.';
+      document.getElementById('doneUsernameNote').textContent = '@'+state.username.toLowerCase()+' is live';
+      showStep(4);
+    } catch(err){
+      console.error(err);
+      alert('Could not save your profile: ' + err.message + '\n\nCheck your Firestore rules allow this write.');
+      finishBtn.disabled = false;
+      finishBtn.textContent = 'Create profile';
+    }
+  }
+
+  // Module scripts don't leak to global scope automatically —
+  // expose the handlers the inline onclick="" attributes call.
+  window.handleGoogle = handleGoogle;
+  window.handleCode = handleCode;
+  window.handlePhoto = handlePhoto;
+  window.handleUsername = handleUsername;
+  window.handleFinish = handleFinish;
+</script>
+</body>
+</html>
