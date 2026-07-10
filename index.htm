@@ -34,6 +34,17 @@
     justify-content:center;
     padding:32px 20px;
   }
+  .boot-loading{
+    position:fixed; inset:0;
+    display:flex; align-items:center; justify-content:center;
+    background:var(--ink);
+    color:var(--slate);
+    font-family:'JetBrains Mono',monospace;
+    font-size:13px;
+    letter-spacing:1px;
+    z-index:999;
+  }
+
   .stage{
     width:100%;
     max-width:920px;
@@ -405,6 +416,23 @@
   .profile-id-value{font-family:'JetBrains Mono',monospace; font-size:14px; color:var(--brass); letter-spacing:1.5px;}
   .profile-id-hint{font-size:11px; color:var(--slate-dim); margin-top:8px; text-align:center; max-width:220px;}
 
+  .logout-btn{
+    margin:28px auto 0;
+    display:block;
+    background:transparent;
+    border:1.5px solid var(--line);
+    color:var(--bad);
+    border-radius:9px;
+    padding:11px 24px;
+    font-family:'Inter',sans-serif;
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+    transition:border-color .2s ease, background .2s ease;
+  }
+  .logout-btn:hover{border-color:var(--bad); background:rgba(226,115,90,0.08);}
+  .logout-btn:disabled{opacity:0.6; cursor:default;}
+
   /* ---- chat / inbox overlay ---- */
   .chat-overlay{
     display:none; flex-direction:column;
@@ -449,7 +477,11 @@
 </head>
 <body>
 
-<div class="stage">
+<div class="boot-loading" id="bootLoading">
+  <span>Checking your session…</span>
+</div>
+
+<div class="stage" id="stage" style="display:none;">
   <div class="card-wrap">
     <div class="card" id="card">
       <div class="card-top">
@@ -593,6 +625,7 @@
         </div>
         <div class="profile-id-hint" id="profileIdHint">Share this ID so others can find and connect with you</div>
       </div>
+      <button class="logout-btn" id="logoutBtn" onclick="handleLogout()">Log out</button>
     </div>
 
   </div>
@@ -652,7 +685,10 @@
 -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getAuth, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import {
+    getAuth, GoogleAuthProvider, signInWithPopup, signOut,
+    setPersistence, browserLocalPersistence, onAuthStateChanged
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
   import {
     getFirestore, doc, setDoc, getDoc, query, where, getDocs,
     collection, onSnapshot, addDoc, orderBy, serverTimestamp
@@ -673,10 +709,17 @@
   const db = getFirestore(app);
   const provider = new GoogleAuthProvider();
 
+  // Keep the person signed in across tabs, reloads, and browser
+  // restarts — until they explicitly log out.
+  setPersistence(auth, browserLocalPersistence).catch(err => {
+    console.error('Failed to set auth persistence:', err);
+  });
+
   const state = { uid:null, name:"", email:"", code:"", username:"", photo:null, userId:null };
   let activeChatConnId = null;
   let activeChatUnsub = null;
   let contactsUnsub = null;
+  let restoringSession = true; // true until the first auth-state check resolves
 
   function generateUserId(){
     // 10-digit numeric ID, first digit non-zero.
@@ -871,6 +914,84 @@
     }
     listenToContacts();
   }
+
+  // ---------------- SESSION RESTORE / LOGOUT ----------------
+
+  onAuthStateChanged(auth, async (user) => {
+    const boot = document.getElementById('bootLoading');
+    const stage = document.getElementById('stage');
+
+    if(!user){
+      // Not signed in — show the normal onboarding flow.
+      restoringSession = false;
+      boot.style.display = 'none';
+      stage.style.display = 'grid';
+      return;
+    }
+
+    try{
+      const snap = await getDoc(doc(db, 'users', user.uid));
+      if(snap.exists() && snap.data().username && snap.data().userId){
+        // Fully onboarded already — restore straight into the app,
+        // no need to sign in or re-enter details again.
+        const data = snap.data();
+        state.uid = user.uid;
+        state.name = user.displayName || '';
+        state.email = data.email || user.email || '';
+        state.username = data.username;
+        state.userId = data.userId;
+        state.photo = data.photoURL || user.photoURL || null;
+        boot.style.display = 'none';
+        revealAppHome();
+      } else {
+        // Signed in with Google before, but never finished the
+        // code + profile steps — resume onboarding at step 2.
+        state.uid = user.uid;
+        state.name = user.displayName || '';
+        state.email = user.email || '';
+        if(user.photoURL){
+          const html = `<img src="${user.photoURL}" alt="Profile photo">`;
+          document.getElementById('avatarSlot').innerHTML = html;
+          document.getElementById('avatarSlot').classList.add('filled');
+          document.getElementById('avatarSlotSmall').innerHTML = html;
+          document.getElementById('avatarSlotSmall').classList.add('filled');
+          state.photo = user.photoURL;
+        }
+        document.getElementById('cardStatus').textContent = 'Connected';
+        document.getElementById('cardStatus').classList.add('active');
+        document.getElementById('card').classList.add('lit');
+        document.getElementById('cardId').textContent = 'ID · ' + user.uid.slice(0,8).toUpperCase();
+        setPunch(1);
+        boot.style.display = 'none';
+        stage.style.display = 'grid';
+        showStep(2);
+      }
+    } catch(err){
+      console.error('Session restore failed:', err);
+      boot.style.display = 'none';
+      stage.style.display = 'grid';
+    } finally {
+      restoringSession = false;
+    }
+  });
+
+  async function handleLogout(){
+    const btn = document.getElementById('logoutBtn');
+    if(btn){ btn.disabled = true; btn.textContent = 'Logging out…'; }
+    try{
+      if(contactsUnsub) contactsUnsub();
+      if(activeChatUnsub) activeChatUnsub();
+      await signOut(auth);
+      // Reload to a clean slate so the onboarding flow starts fresh
+      // next time someone (or the same person) signs in.
+      location.reload();
+    } catch(err){
+      console.error('Logout failed:', err);
+      alert('Could not log out: ' + err.message);
+      if(btn){ btn.disabled = false; btn.textContent = 'Log out'; }
+    }
+  }
+  window.handleLogout = handleLogout;
 
   function formatId(id){
     if(!id) return '—';
