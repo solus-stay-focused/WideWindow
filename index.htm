@@ -569,6 +569,21 @@
   .group-photo-step{display:flex; flex-direction:column; align-items:center; gap:14px; padding:10px 0 30px;}
   .group-photo-hint{font-size:12px; color:var(--slate-dim); text-align:center; max-width:240px;}
   .group-selected-count{font-size:12px; color:var(--slate); margin-left:4px;}
+  .group-modal-topbar-spacer{width:34px; height:34px; flex-shrink:0;}
+  .group-info-header{display:flex; flex-direction:column; align-items:center; gap:6px; padding:8px 0 6px;}
+  .group-info-avatar{
+    width:76px; height:76px; border-radius:50%; overflow:hidden; flex-shrink:0;
+    background:var(--panel-raised); display:flex; align-items:center; justify-content:center;
+  }
+  .group-info-avatar img{width:100%; height:100%; object-fit:cover;}
+  .group-info-avatar svg{width:32px; height:32px; stroke:var(--slate-dim);}
+  .group-info-name{font-family:'Fraunces',serif; font-size:19px; font-weight:500; color:var(--ivory); text-align:center;}
+  .group-info-sub{font-size:12px; color:var(--slate);}
+  .member-tag{
+    font-size:9px; font-family:'JetBrains Mono',monospace; letter-spacing:1px;
+    color:var(--brass); background:rgba(201,162,39,0.1); border:1px solid rgba(201,162,39,0.3);
+    border-radius:5px; padding:3px 6px; flex-shrink:0; margin-left:8px;
+  }
 
   /* ---- calls: incoming popup + active call overlay ---- */
   .incoming-call-overlay, .call-overlay{
@@ -854,6 +869,11 @@
           <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="var(--ivory)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m23 7-7 5 7 5V7Z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
         </button>
       </div>
+      <div class="chat-topbar-actions" id="chatGroupActions" style="display:none;">
+        <button class="icon-btn" onclick="openGroupInfo()" title="Group info">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="var(--ivory)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </button>
+      </div>
     </div>
     <div class="chat-messages" id="chatMessages"></div>
     <div class="chat-input-row">
@@ -910,6 +930,53 @@
       <button class="ghost-btn small-btn" id="groupSkipBtn" onclick="skipGroupPhoto()" style="display:none;">Skip</button>
       <div class="footer-spacer"></div>
       <button class="primary-btn small-btn" id="groupNextBtn" onclick="groupModalNext()" disabled>Next</button>
+    </div>
+  </div>
+
+  <!-- GROUP INFO MODAL -->
+  <div class="group-modal" id="groupInfoModal">
+    <div class="group-modal-topbar">
+      <button class="icon-btn" onclick="closeGroupInfo()" title="Back">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--ivory)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
+      <div class="group-modal-title">Group info</div>
+      <div class="group-modal-topbar-spacer"></div>
+    </div>
+    <div class="group-modal-body">
+      <div class="group-info-header">
+        <div class="group-info-avatar" id="groupInfoAvatar"></div>
+        <div class="group-info-name" id="groupInfoName">—</div>
+        <div class="group-info-sub" id="groupInfoSub">—</div>
+      </div>
+      <div class="group-modal-hint" style="margin-top:20px;">Members</div>
+      <div id="groupInfoMemberList"></div>
+    </div>
+    <div class="group-modal-footer">
+      <div class="footer-spacer"></div>
+      <button class="primary-btn small-btn" onclick="openAddMembers()">Add members</button>
+    </div>
+  </div>
+
+  <!-- ADD MEMBERS MODAL -->
+  <div class="group-modal" id="addMembersModal">
+    <div class="group-modal-topbar">
+      <button class="icon-btn" onclick="closeAddMembers()" title="Back">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--ivory)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
+      <div class="group-modal-title">Add members</div>
+      <div class="group-modal-topbar-spacer"></div>
+    </div>
+    <div class="group-modal-body">
+      <div class="group-modal-hint">Choose contacts to add<span class="group-selected-count" id="addMembersSelectedCount"></span></div>
+      <div class="empty-state" id="addMembersEmpty" style="display:none;">
+        <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="var(--slate-dim)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <p>Everyone in your contacts is already in this group.</p>
+      </div>
+      <div id="addMembersList"></div>
+    </div>
+    <div class="group-modal-footer">
+      <div class="footer-spacer"></div>
+      <button class="primary-btn small-btn" id="addMembersBtn" onclick="confirmAddMembers()" disabled>Add</button>
     </div>
   </div>
 </div>
@@ -980,7 +1047,7 @@
   import {
     getFirestore, doc, setDoc, getDoc, query, where, getDocs,
     collection, onSnapshot, addDoc, orderBy, serverTimestamp,
-    updateDoc, deleteDoc
+    updateDoc, deleteDoc, arrayUnion
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -1039,12 +1106,14 @@
   let activeChatType = 'dm'; // 'dm' | 'group'
   let activeGroupInfo = null;
   let activeChatUnsub = null;
+  let activeGroupDocUnsub = null;
   let contactsUnsub = null;
   let groupsUnsub = null;
   let contactsCache = []; // [{uid, info}] kept in sync by listenToContacts, used for group member picker
   let groupSelectedMembers = new Map(); // uid -> info
   let groupPhotoData = null;
   let groupStepIndex = 1;
+  let addMembersSelection = new Map(); // uid -> info, for adding members to an existing group
   let restoringSession = true; // true until the first auth-state check resolves
 
   // ---- calls ----
@@ -1344,6 +1413,7 @@
       if(contactsUnsub) contactsUnsub();
       if(groupsUnsub) groupsUnsub();
       if(activeChatUnsub) activeChatUnsub();
+      if(activeGroupDocUnsub) activeGroupDocUnsub();
       if(incomingCallsUnsub) incomingCallsUnsub();
       if(callState) hangupCall();
       await signOut(auth);
@@ -1697,9 +1767,11 @@
       ? `<img src="${otherInfo.photoURL}" alt="">` : '';
     document.getElementById('chatSubtitle').style.display = 'none';
     document.getElementById('chatTopbarActions').style.display = 'flex';
+    document.getElementById('chatGroupActions').style.display = 'none';
     document.getElementById('chatOverlay').classList.add('active');
     document.getElementById('chatMessages').innerHTML = `<div class="chat-empty">Loading messages…</div>`;
 
+    if(activeGroupDocUnsub){ activeGroupDocUnsub(); activeGroupDocUnsub = null; }
     if(activeChatUnsub) activeChatUnsub();
     const q = query(collection(db, 'connections', connId, 'messages'), orderBy('createdAt', 'asc'));
     activeChatUnsub = onSnapshot(q, (snap) => {
@@ -1738,8 +1810,25 @@
     sub.style.display = 'block';
     // Group calling isn't supported yet, so hide the 1:1 call buttons here.
     document.getElementById('chatTopbarActions').style.display = 'none';
+    document.getElementById('chatGroupActions').style.display = 'flex';
     document.getElementById('chatOverlay').classList.add('active');
     document.getElementById('chatMessages').innerHTML = `<div class="chat-empty">Loading messages…</div>`;
+
+    // Keep group name/photo/member-count/member-list live, so info and
+    // sender labels stay correct even as members are added elsewhere.
+    if(activeGroupDocUnsub) activeGroupDocUnsub();
+    activeGroupDocUnsub = onSnapshot(doc(db, 'groups', groupId), (snap) => {
+      if(!snap.exists()) return;
+      activeGroupInfo = snap.data();
+      document.getElementById('chatTitle').textContent = activeGroupInfo.name || 'Group';
+      document.getElementById('chatSubtitle').textContent = (activeGroupInfo.members || []).length + ' members';
+      document.getElementById('chatAvatar').innerHTML = activeGroupInfo.photoURL
+        ? `<img src="${activeGroupInfo.photoURL}" alt="">`
+        : `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--slate-dim)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="margin:8px;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`;
+      if(document.getElementById('groupInfoModal').classList.contains('active')){
+        renderGroupInfo(activeGroupInfo);
+      }
+    }, (err) => console.error('Group doc listener failed:', err));
 
     if(activeChatUnsub) activeChatUnsub();
     const q = query(collection(db, 'groups', groupId, 'messages'), orderBy('createdAt', 'asc'));
@@ -1773,6 +1862,7 @@
   function closeChat(){
     document.getElementById('chatOverlay').classList.remove('active');
     if(activeChatUnsub){ activeChatUnsub(); activeChatUnsub = null; }
+    if(activeGroupDocUnsub){ activeGroupDocUnsub(); activeGroupDocUnsub = null; }
     activeChatConnId = null;
     activeGroupInfo = null;
     activeChatType = 'dm';
@@ -1972,6 +2062,132 @@
       if(skipBtn){ skipBtn.disabled = false; }
     }
   }
+
+  // ---------------- GROUP INFO (view members) ----------------
+
+  function openGroupInfo(){
+    if(activeChatType !== 'group' || !activeGroupInfo) return;
+    renderGroupInfo(activeGroupInfo);
+    document.getElementById('groupInfoModal').classList.add('active');
+  }
+  window.openGroupInfo = openGroupInfo;
+
+  function closeGroupInfo(){
+    document.getElementById('groupInfoModal').classList.remove('active');
+  }
+  window.closeGroupInfo = closeGroupInfo;
+
+  function renderGroupInfo(data){
+    document.getElementById('groupInfoName').textContent = data.name || 'Group';
+    document.getElementById('groupInfoSub').textContent = (data.members || []).length + ' members';
+    document.getElementById('groupInfoAvatar').innerHTML = data.photoURL
+      ? `<img src="${data.photoURL}" alt="">`
+      : `<svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`;
+
+    const listEl = document.getElementById('groupInfoMemberList');
+    listEl.innerHTML = '';
+    (data.members || []).forEach(uid => {
+      const info = data.memberInfo?.[uid] || {};
+      const avatarHtml = info.photoURL
+        ? `<img src="${info.photoURL}" alt="">`
+        : `<svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+      const row = document.createElement('div');
+      row.className = 'contact-row';
+      row.style.cursor = 'default';
+      const tag = uid === state.uid ? '<span class="member-tag">YOU</span>'
+        : (uid === data.createdBy ? '<span class="member-tag">ADMIN</span>' : '');
+      row.innerHTML = `
+        <div class="contact-row-avatar">${avatarHtml}</div>
+        <div class="contact-row-info">
+          <div class="contact-row-name">${info.nickname || info.username || 'Member'}</div>
+        </div>
+        ${tag}`;
+      listEl.appendChild(row);
+    });
+  }
+
+  // ---------------- ADD MEMBERS (to an existing group) ----------------
+
+  function openAddMembers(){
+    addMembersSelection = new Map();
+    document.getElementById('addMembersBtn').disabled = true;
+    document.getElementById('addMembersSelectedCount').textContent = '';
+    renderAddMembersList();
+    document.getElementById('addMembersModal').classList.add('active');
+  }
+  window.openAddMembers = openAddMembers;
+
+  function closeAddMembers(){
+    document.getElementById('addMembersModal').classList.remove('active');
+  }
+  window.closeAddMembers = closeAddMembers;
+
+  function renderAddMembersList(){
+    const listEl = document.getElementById('addMembersList');
+    const emptyEl = document.getElementById('addMembersEmpty');
+    listEl.innerHTML = '';
+    const currentMembers = new Set((activeGroupInfo && activeGroupInfo.members) || []);
+    const available = contactsCache.filter(c => !currentMembers.has(c.uid));
+    if(available.length === 0){
+      emptyEl.style.display = 'flex';
+      return;
+    }
+    emptyEl.style.display = 'none';
+    available.forEach(({ uid, info }) => {
+      const avatarHtml = info.photoURL
+        ? `<img src="${info.photoURL}" alt="">`
+        : `<svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+      const row = document.createElement('div');
+      row.className = 'contact-row member-row';
+      row.innerHTML = `
+        <div class="contact-row-avatar">${avatarHtml}</div>
+        <div class="contact-row-info">
+          <div class="contact-row-name">${info.nickname || info.username}</div>
+        </div>
+        <div class="member-check"><svg viewBox="0 0 24 24" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>`;
+      row.onclick = () => toggleAddMember(uid, info, row);
+      listEl.appendChild(row);
+    });
+  }
+
+  function toggleAddMember(uid, info, row){
+    if(addMembersSelection.has(uid)){
+      addMembersSelection.delete(uid);
+      row.classList.remove('selected');
+    } else {
+      addMembersSelection.set(uid, info);
+      row.classList.add('selected');
+    }
+    const countEl = document.getElementById('addMembersSelectedCount');
+    countEl.textContent = addMembersSelection.size > 0 ? ` · ${addMembersSelection.size} selected` : '';
+    document.getElementById('addMembersBtn').disabled = addMembersSelection.size === 0;
+  }
+
+  async function confirmAddMembers(){
+    if(addMembersSelection.size === 0 || !activeChatConnId || activeChatType !== 'group') return;
+    const btn = document.getElementById('addMembersBtn');
+    btn.disabled = true; btn.textContent = 'Adding…';
+    try{
+      const updates = { members: arrayUnion(...addMembersSelection.keys()) };
+      addMembersSelection.forEach((info, uid) => {
+        updates[`memberInfo.${uid}`] = {
+          username: info.username,
+          nickname: info.nickname || info.username,
+          photoURL: info.photoURL || null
+        };
+      });
+      await updateDoc(doc(db, 'groups', activeChatConnId), updates);
+      // activeGroupInfo/subtitle/member list refresh automatically via the
+      // live group-doc listener set up in openGroupChat().
+      closeAddMembers();
+    } catch(err){
+      console.error('Add members failed:', err);
+      alert('Could not add members: ' + err.message);
+    } finally {
+      btn.disabled = false; btn.textContent = 'Add';
+    }
+  }
+  window.confirmAddMembers = confirmAddMembers;
 
   // ---------------- CALLS (WebRTC + Firestore signaling) ----------------
   //
