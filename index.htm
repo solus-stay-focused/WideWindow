@@ -410,10 +410,41 @@
     display:flex; align-items:center; gap:8px;
     margin-top:14px; padding:8px 14px;
     background:var(--panel-raised); border:1px solid var(--line); border-radius:9px;
-    cursor:pointer;
   }
   .profile-id-label{font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--slate-dim); letter-spacing:1px;}
-  .profile-id-value{font-family:'JetBrains Mono',monospace; font-size:14px; color:var(--brass); letter-spacing:1.5px;}
+  .profile-id-value{font-family:'JetBrains Mono',monospace; font-size:14px; color:var(--brass); letter-spacing:1.5px; cursor:pointer; flex:1;}
+  .id-edit-btn{
+    background:none; border:none; padding:4px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .id-edit-btn svg{width:14px; height:14px; stroke:var(--slate-dim); transition:stroke .2s ease;}
+  .id-edit-btn:hover svg{stroke:var(--brass);}
+  .profile-id-edit{
+    display:flex; align-items:center; gap:8px;
+    margin-top:14px; flex-wrap:wrap;
+  }
+  .profile-id-edit input{
+    background:var(--panel);
+    border:1.5px solid var(--line);
+    border-radius:9px;
+    padding:10px 12px;
+    color:var(--ivory);
+    font-family:'JetBrains Mono',monospace;
+    font-size:14px;
+    letter-spacing:1.5px;
+    outline:none;
+    width:150px;
+  }
+  .profile-id-edit input:focus{border-color:var(--brass);}
+  .ghost-btn{
+    background:transparent; border:1.5px solid var(--line); color:var(--slate);
+    border-radius:9px; padding:0 16px; font-family:'Inter',sans-serif; font-weight:600;
+    font-size:13px; cursor:pointer;
+  }
+  .ghost-btn:hover{border-color:var(--slate);}
+  .profile-id-msg{font-size:12px; margin-top:8px; min-height:16px; text-align:center; max-width:260px;}
+  .profile-id-msg.err{color:var(--bad);}
+  .profile-id-msg.ok{color:var(--good);}
   .profile-id-hint{font-size:11px; color:var(--slate-dim); margin-top:8px; text-align:center; max-width:220px;}
 
   .logout-btn{
@@ -478,7 +509,17 @@
 <body>
 
 <div class="boot-loading" id="bootLoading">
-  <span>Checking your session…</span>
+  <div id="bootMsg" style="display:flex; flex-direction:column; align-items:center; gap:14px;">
+    <span>Checking your session…</span>
+  </div>
+  <div id="bootFallback" style="display:none; flex-direction:column; align-items:center; gap:16px; max-width:420px; text-align:center; padding:0 24px;">
+    <span style="color:var(--bad); font-weight:600;">Something's blocking startup</span>
+    <span id="bootFallbackDetail" style="color:var(--slate); font-size:12px; line-height:1.6; word-break:break-word;"></span>
+    <button onclick="document.getElementById('bootLoading').style.display='none'; document.getElementById('stage').style.display='grid';"
+      style="background:var(--brass); border:none; border-radius:9px; padding:11px 22px; color:#1a1a1a; font-weight:700; font-family:'Inter',sans-serif; font-size:13px; cursor:pointer;">
+      Continue to sign-in
+    </button>
+  </div>
 </div>
 
 <div class="stage" id="stage" style="display:none;">
@@ -618,11 +659,19 @@
         </div>
         <div class="profile-name" id="profileName">—</div>
         <div class="profile-email" id="profileEmail">—</div>
-        <div class="profile-id-row" id="profileIdRow" onclick="copyProfileId()" title="Tap to copy">
+        <div class="profile-id-row" id="profileIdRow">
           <span class="profile-id-label">ID</span>
-          <span class="profile-id-value" id="profileIdValue">—</span>
-          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="var(--slate)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          <span class="profile-id-value" id="profileIdValue" onclick="copyProfileId()" title="Tap to copy">—</span>
+          <button class="id-edit-btn" id="idEditBtn" onclick="startEditProfileId()" title="Edit ID">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+          </button>
         </div>
+        <div class="profile-id-edit" id="profileIdEdit" style="display:none;">
+          <input type="text" id="profileIdInput" maxlength="10" inputmode="numeric" oninput="this.value=this.value.replace(/[^0-9]/g,'')" placeholder="10-digit ID">
+          <button class="primary-btn small-btn" id="saveIdBtn" onclick="saveProfileId()">Save</button>
+          <button class="ghost-btn small-btn" onclick="cancelEditProfileId()">Cancel</button>
+        </div>
+        <div class="profile-id-msg" id="profileIdMsg"></div>
         <div class="profile-id-hint" id="profileIdHint">Share this ID so others can find and connect with you</div>
       </div>
       <button class="logout-btn" id="logoutBtn" onclick="handleLogout()">Log out</button>
@@ -704,29 +753,50 @@
     measurementId: "G-C0CJLW8LW7"
   };
 
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
-  const provider = new GoogleAuthProvider();
+  function showBootFallback(message){
+    const bootMsg = document.getElementById('bootMsg');
+    const fallback = document.getElementById('bootFallback');
+    const detail = document.getElementById('bootFallbackDetail');
+    if(bootMsg) bootMsg.style.display = 'none';
+    if(detail) detail.textContent = message;
+    if(fallback) fallback.style.display = 'flex';
+  }
+
+  let app, auth, db, provider;
+  try{
+    app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    db = getFirestore(app);
+    provider = new GoogleAuthProvider();
+  } catch(err){
+    console.error('Firebase initialization failed:', err);
+    showBootFallback('Firebase failed to start: ' + err.message);
+  }
+
+  // Safety net: if the session check hasn't finished within a few
+  // seconds (blocked network request, ad-blocker, misconfigured
+  // Firebase project, etc.), stop waiting and show what happened
+  // instead of hanging on "Checking your session…" forever.
+  setTimeout(() => {
+    if(restoringSession){
+      console.error('Session check timed out after 7s.');
+      showBootFallback('The session check is taking too long. This usually means a network request to Firebase/Firestore is being blocked (ad-blocker, browser privacy shields, or firewall) or the Firestore rules/project aren\'t set up yet. Check the browser console (F12) for the exact error.');
+    }
+  }, 7000);
 
   // Keep the person signed in across tabs, reloads, and browser
   // restarts — until they explicitly log out.
-  setPersistence(auth, browserLocalPersistence).catch(err => {
-    console.error('Failed to set auth persistence:', err);
-  });
+  if(auth){
+    setPersistence(auth, browserLocalPersistence).catch(err => {
+      console.error('Failed to set auth persistence:', err);
+    });
+  }
 
   const state = { uid:null, name:"", email:"", code:"", username:"", photo:null, userId:null };
   let activeChatConnId = null;
   let activeChatUnsub = null;
   let contactsUnsub = null;
   let restoringSession = true; // true until the first auth-state check resolves
-
-  function generateUserId(){
-    // 10-digit numeric ID, first digit non-zero.
-    let id = String(Math.floor(1 + Math.random()*9));
-    for(let i=0;i<9;i++) id += String(Math.floor(Math.random()*10));
-    return id;
-  }
 
   // build code boxes
   const codeRow = document.getElementById('codeRow');
@@ -802,16 +872,42 @@
     }
   }
 
-  function handleCode(){
+  async function handleCode(){
     const vals = [...codeRow.children].map(c=>c.value);
     const code = vals.join('');
     const msg = document.getElementById('codeMsg');
+    const btn = document.getElementById('codeBtn');
     if(code.startsWith('0')){
       msg.textContent = 'That code isn\'t valid. Double-check it and try again.';
       msg.className = 'code-msg err';
       codeRow.classList.add('shake');
       return;
     }
+
+    // This code becomes the person's permanent profile ID, so it has
+    // to be unique across everyone who's already signed up.
+    btn.disabled = true;
+    msg.textContent = 'Checking availability…';
+    msg.className = 'code-msg';
+    try{
+      const q = query(collection(db, 'users'), where('userId', '==', code));
+      const snap = await getDocs(q);
+      const takenByOther = snap.docs.some(d => d.id !== state.uid);
+      if(takenByOther){
+        msg.textContent = 'That ID is already taken by someone else. Try a different code.';
+        msg.className = 'code-msg err';
+        codeRow.classList.add('shake');
+        btn.disabled = false;
+        return;
+      }
+    } catch(err){
+      console.error('ID availability check failed:', err);
+      msg.textContent = 'Could not verify availability: ' + err.message;
+      msg.className = 'code-msg err';
+      btn.disabled = false;
+      return;
+    }
+
     state.code = code;
     msg.textContent = 'Code verified.';
     msg.className = 'code-msg ok';
@@ -871,7 +967,7 @@
 
     try{
       if(state.uid){
-        state.userId = generateUserId();
+        state.userId = state.code;
         // Race the write against a timeout so the button never hangs
         // forever if Firestore isn't set up yet.
         const timeout = new Promise((_, reject) =>
@@ -917,7 +1013,7 @@
 
   // ---------------- SESSION RESTORE / LOGOUT ----------------
 
-  onAuthStateChanged(auth, async (user) => {
+  if(auth) onAuthStateChanged(auth, async (user) => {
     const boot = document.getElementById('bootLoading');
     const stage = document.getElementById('stage');
 
@@ -1007,6 +1103,77 @@
       setTimeout(()=>{ hint.textContent = original; }, 1500);
     }).catch(()=>{});
   }
+
+  function startEditProfileId(){
+    document.getElementById('profileIdRow').style.display = 'none';
+    document.getElementById('profileIdEdit').style.display = 'flex';
+    const input = document.getElementById('profileIdInput');
+    input.value = state.userId || '';
+    document.getElementById('profileIdMsg').textContent = '';
+    document.getElementById('profileIdMsg').className = 'profile-id-msg';
+    input.focus();
+  }
+  window.startEditProfileId = startEditProfileId;
+
+  function cancelEditProfileId(){
+    document.getElementById('profileIdRow').style.display = 'flex';
+    document.getElementById('profileIdEdit').style.display = 'none';
+    document.getElementById('profileIdMsg').textContent = '';
+  }
+  window.cancelEditProfileId = cancelEditProfileId;
+
+  async function saveProfileId(){
+    const input = document.getElementById('profileIdInput');
+    const msg = document.getElementById('profileIdMsg');
+    const btn = document.getElementById('saveIdBtn');
+    const val = input.value.trim();
+
+    if(val.length !== 10){
+      msg.textContent = 'ID must be exactly 10 digits.';
+      msg.className = 'profile-id-msg err';
+      return;
+    }
+    if(val.startsWith('0')){
+      msg.textContent = 'ID can\'t start with 0.';
+      msg.className = 'profile-id-msg err';
+      return;
+    }
+    if(val === state.userId){
+      cancelEditProfileId();
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+    msg.textContent = '';
+    msg.className = 'profile-id-msg';
+
+    try{
+      const q = query(collection(db, 'users'), where('userId', '==', val));
+      const snap = await getDocs(q);
+      const takenByOther = snap.docs.some(d => d.id !== state.uid);
+      if(takenByOther){
+        msg.textContent = 'That ID is already taken by someone else.';
+        msg.className = 'profile-id-msg err';
+        btn.disabled = false;
+        btn.textContent = 'Save';
+        return;
+      }
+
+      await setDoc(doc(db, 'users', state.uid), { userId: val }, { merge: true });
+      state.userId = val;
+      document.getElementById('profileIdValue').textContent = formatId(val);
+      cancelEditProfileId();
+    } catch(err){
+      console.error('Profile ID update failed:', err);
+      msg.textContent = 'Could not save: ' + err.message;
+      msg.className = 'profile-id-msg err';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Save';
+    }
+  }
+  window.saveProfileId = saveProfileId;
 
   async function handleProfilePhotoEdit(e){
     const file = e.target.files[0];
