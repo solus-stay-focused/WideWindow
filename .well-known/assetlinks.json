@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "io.github.solus_stay_focused.twa",
+        "sha256_cert_fingerprints": ["22:CB:E4:F6:FC:DC:9D:BF:FA:BA:40:F5:DF:29:5C:CC:D9:5F:20:2E:FB:17:71:71:D9:B6:01:BD:94:8A:8E:64"]
+      }
+    }]
