@@ -478,6 +478,7 @@
     border-bottom:1px solid var(--line);
     flex-shrink:0;
   }
+  .chat-topbar-actions{display:flex; gap:8px; margin-left:auto;}
   .chat-avatar{
     width:34px; height:34px; border-radius:50%; overflow:hidden; flex-shrink:0;
     background:var(--panel-raised);
@@ -498,6 +499,58 @@
     display:flex; gap:10px; align-items:center;
     padding:12px 16px; border-top:1px solid var(--line); flex-shrink:0;
   }
+
+  /* ---- calls: incoming popup + active call overlay ---- */
+  .incoming-call-overlay, .call-overlay{
+    display:none;
+    position:fixed; inset:0; z-index:200;
+    background:var(--ink);
+    flex-direction:column; align-items:center; justify-content:center;
+    gap:20px;
+  }
+  .incoming-call-overlay.active, .call-overlay.active{display:flex;}
+
+  .call-person-avatar{
+    width:110px; height:110px; border-radius:50%; overflow:hidden;
+    background:var(--panel-raised); border:2px solid var(--brass);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .call-person-avatar img{width:100%; height:100%; object-fit:cover;}
+  .call-person-avatar svg{width:44px; height:44px; stroke:var(--slate-dim);}
+  .call-person-name{font-family:'Fraunces',serif; font-size:24px; color:var(--ivory); text-align:center;}
+  .call-status-text{font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--slate); letter-spacing:1px; text-align:center;}
+
+  .incoming-call-actions{display:flex; gap:28px; margin-top:10px;}
+  .call-action-btn{
+    width:58px; height:58px; border-radius:50%; border:none; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    transition:transform .15s ease;
+  }
+  .call-action-btn:hover{transform:translateY(-2px);}
+  .call-action-btn.accept{background:var(--good);}
+  .call-action-btn.decline, .call-action-btn.end{background:var(--bad);}
+  .call-action-btn svg{width:24px; height:24px;}
+
+  .call-video-area{position:relative; width:100%; max-width:900px; flex:1; display:flex; align-items:center; justify-content:center;}
+  .call-remote-video{width:100%; height:100%; max-height:70vh; object-fit:cover; border-radius:14px; background:#000;}
+  .call-remote-video.hidden-video{display:none;}
+  .call-local-video{
+    position:absolute; bottom:16px; right:16px;
+    width:120px; height:160px; object-fit:cover; border-radius:10px;
+    border:1.5px solid var(--line); background:#000;
+  }
+  .call-local-video.hidden-video{display:none;}
+
+  .call-controls{display:flex; gap:20px; align-items:center;}
+  .call-ctrl-btn{
+    width:52px; height:52px; border-radius:50%; border:1.5px solid var(--line);
+    background:var(--panel-raised); cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    transition:border-color .2s ease, background .2s ease;
+  }
+  .call-ctrl-btn svg{width:20px; height:20px; stroke:var(--ivory);}
+  .call-ctrl-btn.muted{background:var(--bad); border-color:var(--bad);}
+  .call-ctrl-btn.off{background:var(--slate-dim); border-color:var(--slate-dim);}
   .chat-input-row input{
     flex:1; background:var(--panel); border:1.5px solid var(--line); border-radius:20px;
     padding:10px 16px; color:var(--ivory); font-family:'Inter',sans-serif; font-size:14px; outline:none;
@@ -702,6 +755,14 @@
       </button>
       <div class="chat-avatar" id="chatAvatar"></div>
       <div class="chat-title" id="chatTitle">—</div>
+      <div class="chat-topbar-actions">
+        <button class="icon-btn" onclick="startCall('audio')" title="Audio call">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="var(--ivory)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92Z"/></svg>
+        </button>
+        <button class="icon-btn" onclick="startCall('video')" title="Video call">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="var(--ivory)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m23 7-7 5 7 5V7Z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+        </button>
+      </div>
     </div>
     <div class="chat-messages" id="chatMessages"></div>
     <div class="chat-input-row">
@@ -710,6 +771,44 @@
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#191305" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/></svg>
       </button>
     </div>
+  </div>
+</div>
+
+<!-- INCOMING CALL POPUP -->
+<div class="incoming-call-overlay" id="incomingCallOverlay">
+  <div class="call-person-avatar" id="incomingCallAvatar"></div>
+  <div class="call-person-name" id="incomingCallName">—</div>
+  <div class="call-status-text" id="incomingCallType">Incoming call…</div>
+  <div class="incoming-call-actions">
+    <button class="call-action-btn decline" onclick="declineCall()" title="Decline">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92Z" transform="rotate(135 12 12)"/></svg>
+    </button>
+    <button class="call-action-btn accept" onclick="acceptCall()" title="Accept">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92Z"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- ACTIVE / OUTGOING CALL OVERLAY -->
+<div class="call-overlay" id="callOverlay">
+  <div class="call-person-avatar" id="callPersonAvatar"></div>
+  <div class="call-person-name" id="callPersonName">—</div>
+  <div class="call-status-text" id="callStatusText">Calling…</div>
+  <div class="call-video-area">
+    <video class="call-remote-video hidden-video" id="callRemoteVideo" autoplay playsinline></video>
+    <video class="call-local-video hidden-video" id="callLocalVideo" autoplay playsinline muted></video>
+    <audio id="callRemoteAudio" autoplay></audio>
+  </div>
+  <div class="call-controls">
+    <button class="call-ctrl-btn" id="micToggleBtn" onclick="toggleMic()" title="Mute">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+    </button>
+    <button class="call-ctrl-btn" id="camToggleBtn" onclick="toggleCamera()" title="Camera">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m23 7-7 5 7 5V7Z"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+    </button>
+    <button class="call-ctrl-btn end" onclick="hangupCall()" title="End call" style="background:var(--bad); border-color:var(--bad);">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92Z" transform="rotate(135 12 12)"/></svg>
+    </button>
   </div>
 </div>
 
@@ -740,7 +839,8 @@
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
   import {
     getFirestore, doc, setDoc, getDoc, query, where, getDocs,
-    collection, onSnapshot, addDoc, orderBy, serverTimestamp
+    collection, onSnapshot, addDoc, orderBy, serverTimestamp,
+    updateDoc, deleteDoc
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -794,9 +894,22 @@
 
   const state = { uid:null, name:"", email:"", code:"", username:"", photo:null, userId:null };
   let activeChatConnId = null;
+  let activeChatOtherUid = null;
+  let activeChatOtherInfo = null;
   let activeChatUnsub = null;
   let contactsUnsub = null;
   let restoringSession = true; // true until the first auth-state check resolves
+
+  // ---- calls ----
+  const ICE_SERVERS = {
+    iceServers: [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' }
+    ]
+  };
+  let callState = null;     // active/outgoing call in progress
+  let pendingCall = null;   // an incoming call waiting for accept/decline
+  let incomingCallsUnsub = null;
 
   // build code boxes
   const codeRow = document.getElementById('codeRow');
@@ -1009,6 +1122,7 @@
       document.getElementById('profileAvatar').innerHTML = html;
     }
     listenToContacts();
+    listenForIncomingCalls();
   }
 
   // ---------------- SESSION RESTORE / LOGOUT ----------------
@@ -1077,6 +1191,8 @@
     try{
       if(contactsUnsub) contactsUnsub();
       if(activeChatUnsub) activeChatUnsub();
+      if(incomingCallsUnsub) incomingCallsUnsub();
+      if(callState) hangupCall();
       await signOut(auth);
       // Reload to a clean slate so the onboarding flow starts fresh
       // next time someone (or the same person) signs in.
@@ -1327,6 +1443,8 @@
 
   function openChat(connId, otherUid, otherInfo){
     activeChatConnId = connId;
+    activeChatOtherUid = otherUid;
+    activeChatOtherInfo = otherInfo;
     document.getElementById('chatTitle').textContent = '@' + otherInfo.username;
     document.getElementById('chatAvatar').innerHTML = otherInfo.photoURL
       ? `<img src="${otherInfo.photoURL}" alt="">` : '';
@@ -1378,6 +1496,335 @@
     }
   }
   window.sendMessage = sendMessage;
+
+  // ---------------- CALLS (WebRTC + Firestore signaling) ----------------
+  //
+  // Data model in Firestore:
+  //   calls/{callId}            { connId, callerUid, calleeUid, type, status,
+  //                                offer, answer, callerInfo, calleeInfo, createdAt }
+  //   calls/{callId}/callerCandidates/{auto}   ICE candidates from the caller
+  //   calls/{callId}/calleeCandidates/{auto}   ICE candidates from the callee
+  //
+  // status moves: ringing -> active -> ended  (or ringing -> declined)
+  //
+  // Note: this only uses public STUN servers, no TURN relay. It will work
+  // on most home/office networks, but a small percentage of restrictive
+  // NATs/firewalls will fail to connect peer-to-peer without a TURN server.
+
+  function callDurationTimer(startMs){
+    return setInterval(() => {
+      const secs = Math.floor((Date.now() - startMs) / 1000);
+      const mm = String(Math.floor(secs / 60)).padStart(2, '0');
+      const ss = String(secs % 60).padStart(2, '0');
+      const el = document.getElementById('callStatusText');
+      if(el) el.textContent = `${mm}:${ss}`;
+    }, 1000);
+  }
+
+  function stopLocalStream(stream){
+    if(stream) stream.getTracks().forEach(t => t.stop());
+  }
+
+  function teardownCallState(){
+    if(!callState) return;
+    if(callState.callDocUnsub) callState.callDocUnsub();
+    if(callState.candidatesUnsub) callState.candidatesUnsub();
+    if(callState.timerInterval) clearInterval(callState.timerInterval);
+    if(callState.pc) callState.pc.close();
+    stopLocalStream(callState.localStream);
+    document.getElementById('callRemoteVideo').srcObject = null;
+    document.getElementById('callLocalVideo').srcObject = null;
+    document.getElementById('callRemoteAudio').srcObject = null;
+    document.getElementById('callOverlay').classList.remove('active');
+    callState = null;
+  }
+
+  async function deleteCallDoc(callId){
+    // Best-effort cleanup of the signaling doc + its candidate subcollections.
+    try{
+      const [callerCands, calleeCands] = await Promise.all([
+        getDocs(collection(db, 'calls', callId, 'callerCandidates')),
+        getDocs(collection(db, 'calls', callId, 'calleeCandidates'))
+      ]);
+      const deletions = [];
+      callerCands.forEach(d => deletions.push(deleteDoc(d.ref)));
+      calleeCands.forEach(d => deletions.push(deleteDoc(d.ref)));
+      await Promise.all(deletions);
+      await deleteDoc(doc(db, 'calls', callId));
+    } catch(err){
+      console.error('Call cleanup failed (non-fatal):', err);
+    }
+  }
+
+  async function startCall(type){
+    if(callState){ alert('You are already in a call.'); return; }
+    if(!activeChatConnId || !activeChatOtherUid){ return; }
+
+    const otherUid = activeChatOtherUid;
+    const otherInfo = activeChatOtherInfo;
+
+    let localStream;
+    try{
+      localStream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+        video: type === 'video'
+      });
+    } catch(err){
+      console.error('getUserMedia failed:', err);
+      alert('Could not access microphone/camera: ' + err.message);
+      return;
+    }
+
+    const pc = new RTCPeerConnection(ICE_SERVERS);
+    callState = {
+      callId: null, connId: activeChatConnId, pc, localStream,
+      type, role: 'caller', otherUid, otherInfo,
+      callDocUnsub: null, candidatesUnsub: null, timerInterval: null
+    };
+
+    localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+
+    setupCallUI(type, otherInfo, 'Calling…');
+
+    if(type === 'video'){
+      const localVideo = document.getElementById('callLocalVideo');
+      localVideo.srcObject = localStream;
+      localVideo.classList.remove('hidden-video');
+    }
+
+    pc.ontrack = (e) => attachRemoteTrack(e, type);
+
+    try{
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+
+      const callRef = await addDoc(collection(db, 'calls'), {
+        connId: activeChatConnId,
+        callerUid: state.uid,
+        calleeUid: otherUid,
+        type,
+        status: 'ringing',
+        offer: { type: offer.type, sdp: offer.sdp },
+        callerInfo: { username: state.username, photoURL: state.photo },
+        calleeInfo: { username: otherInfo.username, photoURL: otherInfo.photoURL || null },
+        createdAt: serverTimestamp()
+      });
+      callState.callId = callRef.id;
+
+      pc.onicecandidate = (e) => {
+        if(e.candidate) addDoc(collection(db, 'calls', callRef.id, 'callerCandidates'), e.candidate.toJSON());
+      };
+
+      callState.candidatesUnsub = onSnapshot(
+        collection(db, 'calls', callRef.id, 'calleeCandidates'),
+        (snap) => snap.docChanges().forEach(ch => {
+          if(ch.type === 'added') pc.addIceCandidate(new RTCIceCandidate(ch.doc.data())).catch(()=>{});
+        })
+      );
+
+      callState.callDocUnsub = onSnapshot(doc(db, 'calls', callRef.id), async (snap) => {
+        const data = snap.data();
+        if(!data) return;
+        if(data.answer && pc.currentRemoteDescription === null){
+          await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+          document.getElementById('callStatusText').textContent = 'Connecting…';
+        }
+        if(data.status === 'declined'){
+          document.getElementById('callStatusText').textContent = 'Declined';
+          setTimeout(() => { teardownCallState(); deleteCallDoc(callRef.id); }, 1200);
+        }
+        if(data.status === 'ended'){
+          teardownCallState();
+        }
+      });
+    } catch(err){
+      console.error('startCall failed:', err);
+      alert('Could not start call: ' + err.message);
+      teardownCallState();
+    }
+  }
+  window.startCall = startCall;
+
+  function attachRemoteTrack(e, type){
+    if(type === 'video'){
+      const remoteVideo = document.getElementById('callRemoteVideo');
+      remoteVideo.srcObject = e.streams[0];
+      remoteVideo.classList.remove('hidden-video');
+    } else {
+      document.getElementById('callRemoteAudio').srcObject = e.streams[0];
+    }
+    if(callState && !callState.timerInterval){
+      const start = Date.now();
+      callState.timerInterval = callDurationTimer(start);
+    }
+  }
+
+  function setupCallUI(type, otherInfo, statusText){
+    document.getElementById('callPersonAvatar').innerHTML = otherInfo.photoURL
+      ? `<img src="${otherInfo.photoURL}" alt="">`
+      : `<svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+    document.getElementById('callPersonName').textContent = '@' + otherInfo.username;
+    document.getElementById('callStatusText').textContent = statusText;
+    document.getElementById('camToggleBtn').style.display = type === 'video' ? 'flex' : 'none';
+    document.getElementById('micToggleBtn').classList.remove('muted');
+    document.getElementById('camToggleBtn').classList.remove('off');
+    document.getElementById('callRemoteVideo').classList.add('hidden-video');
+    document.getElementById('callLocalVideo').classList.add('hidden-video');
+    document.getElementById('callOverlay').classList.add('active');
+  }
+
+  // ---- incoming calls: one listener registered once per session ----
+
+  function listenForIncomingCalls(){
+    if(!state.uid) return;
+    if(incomingCallsUnsub) incomingCallsUnsub();
+    const q = query(
+      collection(db, 'calls'),
+      where('calleeUid', '==', state.uid),
+      where('status', '==', 'ringing')
+    );
+    incomingCallsUnsub = onSnapshot(q, (snap) => {
+      snap.docChanges().forEach(ch => {
+        if(ch.type !== 'added') return;
+        const data = ch.doc.data();
+        const callId = ch.doc.id;
+
+        if(callState || pendingCall){
+          // Already busy — auto-decline so the caller isn't left hanging.
+          updateDoc(doc(db, 'calls', callId), { status: 'declined' }).catch(()=>{});
+          return;
+        }
+
+        pendingCall = { callId, connId: data.connId, callerUid: data.callerUid, type: data.type, offer: data.offer, callerInfo: data.callerInfo };
+        document.getElementById('incomingCallAvatar').innerHTML = data.callerInfo?.photoURL
+          ? `<img src="${data.callerInfo.photoURL}" alt="">`
+          : `<svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+        document.getElementById('incomingCallName').textContent = '@' + (data.callerInfo?.username || 'unknown');
+        document.getElementById('incomingCallType').textContent = (data.type === 'video' ? 'Incoming video call…' : 'Incoming audio call…');
+        document.getElementById('incomingCallOverlay').classList.add('active');
+      });
+
+      // If the ringing call this person is waiting on got cancelled
+      // (caller hung up before we answered), clear the popup.
+      if(pendingCall){
+        const stillRinging = snap.docs.some(d => d.id === pendingCall.callId);
+        if(!stillRinging){
+          document.getElementById('incomingCallOverlay').classList.remove('active');
+          pendingCall = null;
+        }
+      }
+    }, (err) => console.error('Incoming call listener failed:', err));
+  }
+
+  async function acceptCall(){
+    if(!pendingCall) return;
+    const { callId, type, callerUid, callerInfo, offer } = pendingCall;
+    document.getElementById('incomingCallOverlay').classList.remove('active');
+
+    let localStream;
+    try{
+      localStream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+        video: type === 'video'
+      });
+    } catch(err){
+      console.error('getUserMedia failed:', err);
+      alert('Could not access microphone/camera: ' + err.message);
+      updateDoc(doc(db, 'calls', callId), { status: 'declined' }).catch(()=>{});
+      pendingCall = null;
+      return;
+    }
+
+    const pc = new RTCPeerConnection(ICE_SERVERS);
+    callState = {
+      callId, connId: pendingCall.connId, pc, localStream,
+      type, role: 'callee', otherUid: callerUid, otherInfo: callerInfo,
+      callDocUnsub: null, candidatesUnsub: null, timerInterval: null
+    };
+    pendingCall = null;
+
+    localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+    setupCallUI(type, callerInfo, 'Connecting…');
+
+    if(type === 'video'){
+      const localVideo = document.getElementById('callLocalVideo');
+      localVideo.srcObject = localStream;
+      localVideo.classList.remove('hidden-video');
+    }
+
+    pc.ontrack = (e) => attachRemoteTrack(e, type);
+    pc.onicecandidate = (e) => {
+      if(e.candidate) addDoc(collection(db, 'calls', callId, 'calleeCandidates'), e.candidate.toJSON());
+    };
+
+    try{
+      await pc.setRemoteDescription(new RTCSessionDescription(offer));
+
+      callState.candidatesUnsub = onSnapshot(
+        collection(db, 'calls', callId, 'callerCandidates'),
+        (snap) => snap.docChanges().forEach(ch => {
+          if(ch.type === 'added') pc.addIceCandidate(new RTCIceCandidate(ch.doc.data())).catch(()=>{});
+        })
+      );
+
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      await updateDoc(doc(db, 'calls', callId), {
+        answer: { type: answer.type, sdp: answer.sdp },
+        status: 'active'
+      });
+
+      callState.callDocUnsub = onSnapshot(doc(db, 'calls', callId), (snap) => {
+        const data = snap.data();
+        if(data && data.status === 'ended') teardownCallState();
+      });
+    } catch(err){
+      console.error('acceptCall failed:', err);
+      alert('Could not connect the call: ' + err.message);
+      teardownCallState();
+    }
+  }
+  window.acceptCall = acceptCall;
+
+  function declineCall(){
+    if(!pendingCall) return;
+    updateDoc(doc(db, 'calls', pendingCall.callId), { status: 'declined' }).catch(()=>{});
+    document.getElementById('incomingCallOverlay').classList.remove('active');
+    pendingCall = null;
+  }
+  window.declineCall = declineCall;
+
+  function hangupCall(){
+    if(!callState) return;
+    const callId = callState.callId;
+    if(callId){
+      updateDoc(doc(db, 'calls', callId), { status: 'ended' }).catch(()=>{});
+      setTimeout(() => deleteCallDoc(callId), 1500);
+    }
+    teardownCallState();
+  }
+  window.hangupCall = hangupCall;
+
+  function toggleMic(){
+    if(!callState) return;
+    const btn = document.getElementById('micToggleBtn');
+    const audioTrack = callState.localStream.getAudioTracks()[0];
+    if(!audioTrack) return;
+    audioTrack.enabled = !audioTrack.enabled;
+    btn.classList.toggle('muted', !audioTrack.enabled);
+  }
+  window.toggleMic = toggleMic;
+
+  function toggleCamera(){
+    if(!callState || callState.type !== 'video') return;
+    const btn = document.getElementById('camToggleBtn');
+    const videoTrack = callState.localStream.getVideoTracks()[0];
+    if(!videoTrack) return;
+    videoTrack.enabled = !videoTrack.enabled;
+    btn.classList.toggle('off', !videoTrack.enabled);
+  }
+  window.toggleCamera = toggleCamera;
+
 
   // Module scripts don't leak to global scope automatically —
   // expose the handlers the inline onclick="" attributes call.
