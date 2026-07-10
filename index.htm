@@ -333,6 +333,118 @@
   .nav-item.active svg{stroke:var(--brass);}
   .nav-item:hover{color:var(--ivory);}
   .nav-item:hover svg{stroke:var(--ivory);}
+
+  /* ---- contacts: search + list ---- */
+  .tab-title-row{display:flex; align-items:center; gap:12px; margin-bottom:20px;}
+  .tab-title-row .tab-title{margin-bottom:0;}
+  .icon-btn{
+    background:var(--panel); border:1px solid var(--line); border-radius:9px;
+    width:34px; height:34px; display:flex; align-items:center; justify-content:center;
+    cursor:pointer; flex-shrink:0; padding:0;
+    transition:border-color .2s ease;
+  }
+  .icon-btn:hover{border-color:var(--brass-soft);}
+  .icon-btn svg{stroke:var(--ivory);}
+
+  .search-bar{
+    display:none; gap:8px; margin-bottom:14px;
+  }
+  .search-bar.active{display:flex;}
+  .search-bar input{
+    flex:1;
+    background:var(--panel); border:1.5px solid var(--line); border-radius:9px;
+    padding:11px 14px; color:var(--ivory);
+    font-family:'JetBrains Mono',monospace; font-size:14px; letter-spacing:1px;
+    outline:none;
+  }
+  .search-bar input:focus{border-color:var(--brass);}
+  .small-btn{padding:0 18px; max-width:none; font-size:13px;}
+
+  .search-result{margin-bottom:16px;}
+  .result-card, .contact-row{
+    display:flex; align-items:center; gap:12px;
+    background:var(--panel); border:1px solid var(--line); border-radius:12px;
+    padding:12px 14px; margin-bottom:8px;
+  }
+  .result-avatar, .contact-row-avatar{
+    width:42px; height:42px; border-radius:50%; overflow:hidden; flex-shrink:0;
+    background:var(--panel-raised); display:flex; align-items:center; justify-content:center;
+  }
+  .result-avatar img, .contact-row-avatar img{width:100%; height:100%; object-fit:cover;}
+  .result-avatar svg, .contact-row-avatar svg{width:20px; height:20px; stroke:var(--slate-dim);}
+  .result-info, .contact-row-info{flex:1; min-width:0;}
+  .result-name, .contact-row-name{color:var(--ivory); font-size:14px; font-weight:600;}
+  .result-id, .contact-row-id{color:var(--slate); font-family:'JetBrains Mono',monospace; font-size:11px;}
+  .connect-btn{
+    background:var(--brass); color:#191305; border:none; border-radius:8px;
+    padding:8px 14px; font-size:12px; font-weight:700; cursor:pointer; flex-shrink:0;
+  }
+  .connect-btn:disabled{opacity:0.5; cursor:default;}
+  .search-msg{font-size:13px; color:var(--slate); padding:6px 2px;}
+  .search-msg.err{color:var(--bad);}
+
+  .contact-row{cursor:pointer; transition:border-color .2s ease;}
+  .contact-row:hover{border-color:var(--brass-soft);}
+
+  /* ---- profile: avatar edit + id ---- */
+  .profile-avatar-wrap{position:relative; margin-bottom:10px;}
+  .avatar-edit-btn{
+    position:absolute; bottom:2px; right:-2px;
+    width:26px; height:26px; border-radius:50%;
+    background:var(--brass);
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; border:2px solid var(--panel);
+  }
+  .profile-id-row{
+    display:flex; align-items:center; gap:8px;
+    margin-top:14px; padding:8px 14px;
+    background:var(--panel-raised); border:1px solid var(--line); border-radius:9px;
+    cursor:pointer;
+  }
+  .profile-id-label{font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--slate-dim); letter-spacing:1px;}
+  .profile-id-value{font-family:'JetBrains Mono',monospace; font-size:14px; color:var(--brass); letter-spacing:1.5px;}
+  .profile-id-hint{font-size:11px; color:var(--slate-dim); margin-top:8px; text-align:center; max-width:220px;}
+
+  /* ---- chat / inbox overlay ---- */
+  .chat-overlay{
+    display:none; flex-direction:column;
+    position:absolute; inset:0;
+    background:var(--ink);
+    z-index:10;
+  }
+  .chat-overlay.active{display:flex;}
+  .chat-topbar{
+    display:flex; align-items:center; gap:12px;
+    padding:14px 16px;
+    border-bottom:1px solid var(--line);
+    flex-shrink:0;
+  }
+  .chat-avatar{
+    width:34px; height:34px; border-radius:50%; overflow:hidden; flex-shrink:0;
+    background:var(--panel-raised);
+  }
+  .chat-avatar img{width:100%; height:100%; object-fit:cover;}
+  .chat-title{color:var(--ivory); font-weight:600; font-size:15px;}
+  .chat-messages{
+    flex:1; overflow-y:auto; padding:16px 20px; display:flex; flex-direction:column; gap:8px;
+  }
+  .msg-bubble{
+    max-width:75%; padding:9px 13px; border-radius:14px;
+    font-size:14px; line-height:1.4; word-wrap:break-word;
+  }
+  .msg-bubble.mine{align-self:flex-end; background:var(--brass); color:#191305; border-bottom-right-radius:4px;}
+  .msg-bubble.theirs{align-self:flex-start; background:var(--panel); color:var(--ivory); border-bottom-left-radius:4px;}
+  .chat-empty{margin:auto; color:var(--slate-dim); font-size:13px; text-align:center; padding:0 30px;}
+  .chat-input-row{
+    display:flex; gap:10px; align-items:center;
+    padding:12px 16px; border-top:1px solid var(--line); flex-shrink:0;
+  }
+  .chat-input-row input{
+    flex:1; background:var(--panel); border:1.5px solid var(--line); border-radius:20px;
+    padding:10px 16px; color:var(--ivory); font-family:'Inter',sans-serif; font-size:14px; outline:none;
+  }
+  .chat-input-row input:focus{border-color:var(--brass);}
+  .send-btn{background:var(--brass); border-radius:50%;}
 </style>
 </head>
 <body>
@@ -430,11 +542,24 @@
 
     <!-- CONTACTS TAB -->
     <div class="tab-panel active" id="tabContacts">
-      <div class="tab-title">Contacts</div>
-      <div class="empty-state">
-        <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="var(--slate-dim)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-        <p>No contacts yet. People you connect with will show up here.</p>
+      <div class="tab-title-row">
+        <button class="icon-btn" id="searchToggleBtn" onclick="toggleSearch()" title="Search by ID">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        </button>
+        <div class="tab-title">Contacts</div>
       </div>
+
+      <div class="search-bar" id="searchBar">
+        <input type="text" id="searchInput" placeholder="Enter a 10-digit ID" maxlength="10" inputmode="numeric" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+        <button class="primary-btn small-btn" onclick="searchById()">Search</button>
+      </div>
+      <div class="search-result" id="searchResult"></div>
+
+      <div class="empty-state" id="contactsEmpty">
+        <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="var(--slate-dim)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <p>No contacts yet. Search someone's 10-digit ID above to connect.</p>
+      </div>
+      <div class="contact-list" id="contactList"></div>
     </div>
 
     <!-- GROUPS TAB -->
@@ -450,17 +575,29 @@
     <div class="tab-panel" id="tabProfile">
       <div class="tab-title">Profile</div>
       <div class="profile-card">
-        <div class="profile-avatar" id="profileAvatar">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <div class="profile-avatar-wrap">
+          <div class="profile-avatar" id="profileAvatar">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <label class="avatar-edit-btn" for="profilePhotoInput" title="Change photo">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#191305" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+          </label>
+          <input type="file" id="profilePhotoInput" accept="image/*" onchange="handleProfilePhotoEdit(event)">
         </div>
         <div class="profile-name" id="profileName">—</div>
         <div class="profile-email" id="profileEmail">—</div>
+        <div class="profile-id-row" id="profileIdRow" onclick="copyProfileId()" title="Tap to copy">
+          <span class="profile-id-label">ID</span>
+          <span class="profile-id-value" id="profileIdValue">—</span>
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="var(--slate)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        </div>
+        <div class="profile-id-hint" id="profileIdHint">Share this ID so others can find and connect with you</div>
       </div>
     </div>
 
   </div>
 
-  <div class="bottom-nav">
+  <div class="bottom-nav" id="bottomNav">
     <button class="nav-item active" data-tab="Contacts" onclick="switchTab('Contacts')">
       <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
       <span>Contacts</span>
@@ -473,6 +610,24 @@
       <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
       <span>Profile</span>
     </button>
+  </div>
+
+  <!-- INBOX / CHAT OVERLAY -->
+  <div class="chat-overlay" id="chatOverlay">
+    <div class="chat-topbar">
+      <button class="icon-btn" onclick="closeChat()" title="Back">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="var(--ivory)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
+      <div class="chat-avatar" id="chatAvatar"></div>
+      <div class="chat-title" id="chatTitle">—</div>
+    </div>
+    <div class="chat-messages" id="chatMessages"></div>
+    <div class="chat-input-row">
+      <input type="text" id="chatInput" placeholder="Message" onkeydown="if(event.key==='Enter') sendMessage()">
+      <button class="icon-btn send-btn" onclick="sendMessage()">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#191305" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/></svg>
+      </button>
+    </div>
   </div>
 </div>
 
@@ -498,7 +653,10 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getAuth, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-  import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import {
+    getFirestore, doc, setDoc, getDoc, query, where, getDocs,
+    collection, onSnapshot, addDoc, orderBy, serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyDWAm6easAz9wRZaKguqNulbSPIMIgC4fc",
@@ -515,7 +673,17 @@
   const db = getFirestore(app);
   const provider = new GoogleAuthProvider();
 
-  const state = { uid:null, name:"", email:"", code:"", username:"", photo:null };
+  const state = { uid:null, name:"", email:"", code:"", username:"", photo:null, userId:null };
+  let activeChatConnId = null;
+  let activeChatUnsub = null;
+  let contactsUnsub = null;
+
+  function generateUserId(){
+    // 10-digit numeric ID, first digit non-zero.
+    let id = String(Math.floor(1 + Math.random()*9));
+    for(let i=0;i<9;i++) id += String(Math.floor(Math.random()*10));
+    return id;
+  }
 
   // build code boxes
   const codeRow = document.getElementById('codeRow');
@@ -660,6 +828,7 @@
 
     try{
       if(state.uid){
+        state.userId = generateUserId();
         // Race the write against a timeout so the button never hangs
         // forever if Firestore isn't set up yet.
         const timeout = new Promise((_, reject) =>
@@ -671,6 +840,7 @@
             email: state.email,
             accessCodeVerified: true,
             photoURL: state.photo,
+            userId: state.userId,
             createdAt: new Date().toISOString()
           }),
           timeout
@@ -694,11 +864,46 @@
 
     document.getElementById('profileName').textContent = state.username;
     document.getElementById('profileEmail').textContent = state.email || '';
+    document.getElementById('profileIdValue').textContent = formatId(state.userId);
     if(state.photo){
       const html = `<img src="${state.photo}" alt="Profile photo">`;
       document.getElementById('profileAvatar').innerHTML = html;
     }
+    listenToContacts();
   }
+
+  function formatId(id){
+    if(!id) return '—';
+    return id.replace(/(\d{2})(?=\d)/g, '$1 ').trim();
+  }
+
+  function copyProfileId(){
+    if(!state.userId) return;
+    navigator.clipboard.writeText(state.userId).then(()=>{
+      const hint = document.getElementById('profileIdHint');
+      const original = hint.textContent;
+      hint.textContent = 'Copied to clipboard';
+      setTimeout(()=>{ hint.textContent = original; }, 1500);
+    }).catch(()=>{});
+  }
+
+  async function handleProfilePhotoEdit(e){
+    const file = e.target.files[0];
+    if(!file || !state.uid) return;
+    const reader = new FileReader();
+    reader.onload = async (ev)=>{
+      state.photo = ev.target.result;
+      document.getElementById('profileAvatar').innerHTML = `<img src="${ev.target.result}" alt="Profile photo">`;
+      try{
+        await setDoc(doc(db, 'users', state.uid), { photoURL: state.photo }, { merge: true });
+      } catch(err){
+        console.error('Photo update failed:', err);
+      }
+    };
+    reader.readAsDataURL(file);
+  }
+  window.handleProfilePhotoEdit = handleProfilePhotoEdit;
+  window.copyProfileId = copyProfileId;
 
   function switchTab(name){
     document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
@@ -706,6 +911,185 @@
     document.getElementById('tab'+name).classList.add('active');
   }
   window.switchTab = switchTab;
+
+  // ---------------- SEARCH & CONNECT ----------------
+
+  function toggleSearch(){
+    const bar = document.getElementById('searchBar');
+    bar.classList.toggle('active');
+    if(bar.classList.contains('active')) document.getElementById('searchInput').focus();
+    else document.getElementById('searchResult').innerHTML = '';
+  }
+  window.toggleSearch = toggleSearch;
+
+  async function searchById(){
+    const val = document.getElementById('searchInput').value.trim();
+    const resultBox = document.getElementById('searchResult');
+    if(val.length !== 10){
+      resultBox.innerHTML = `<div class="search-msg err">Enter all 10 digits.</div>`;
+      return;
+    }
+    resultBox.innerHTML = `<div class="search-msg">Searching…</div>`;
+    try{
+      const q = query(collection(db, 'users'), where('userId', '==', val));
+      const snap = await getDocs(q);
+      if(snap.empty){
+        resultBox.innerHTML = `<div class="search-msg err">No one found with that ID.</div>`;
+        return;
+      }
+      const found = snap.docs[0];
+      const data = found.data();
+      const otherUid = found.id;
+
+      if(otherUid === state.uid){
+        resultBox.innerHTML = `<div class="search-msg err">That's your own ID.</div>`;
+        return;
+      }
+
+      const avatarHtml = data.photoURL
+        ? `<img src="${data.photoURL}" alt="">`
+        : `<svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+
+      resultBox.innerHTML = `
+        <div class="result-card">
+          <div class="result-avatar">${avatarHtml}</div>
+          <div class="result-info">
+            <div class="result-name">@${data.username}</div>
+            <div class="result-id">${formatId(data.userId)}</div>
+          </div>
+          <button class="connect-btn" id="connectBtn">Connect</button>
+        </div>`;
+
+      document.getElementById('connectBtn').onclick = () => connectWithUser(otherUid, data);
+    } catch(err){
+      console.error('Search failed:', err);
+      resultBox.innerHTML = `<div class="search-msg err">Search failed: ${err.message}</div>`;
+    }
+  }
+  window.searchById = searchById;
+
+  function connIdFor(uidA, uidB){
+    return [uidA, uidB].sort().join('_');
+  }
+
+  async function connectWithUser(otherUid, otherData){
+    const btn = document.getElementById('connectBtn');
+    if(btn){ btn.disabled = true; btn.textContent = 'Connecting…'; }
+    try{
+      const connId = connIdFor(state.uid, otherUid);
+      const myInfo = { username: state.username, photoURL: state.photo, userId: state.userId };
+      const theirInfo = { username: otherData.username, photoURL: otherData.photoURL || null, userId: otherData.userId };
+
+      await setDoc(doc(db, 'connections', connId), {
+        participants: [state.uid, otherUid],
+        userInfo: { [state.uid]: myInfo, [otherUid]: theirInfo },
+        createdAt: new Date().toISOString()
+      }, { merge: true });
+
+      document.getElementById('searchResult').innerHTML = '';
+      document.getElementById('searchInput').value = '';
+      toggleSearch();
+      openChat(connId, otherUid, theirInfo);
+    } catch(err){
+      console.error('Connect failed:', err);
+      if(btn){ btn.disabled = false; btn.textContent = 'Connect'; }
+      alert('Could not connect: ' + err.message);
+    }
+  }
+
+  // ---------------- CONTACTS LIST (live) ----------------
+
+  function listenToContacts(){
+    if(!state.uid) return;
+    if(contactsUnsub) contactsUnsub();
+    const q = query(collection(db, 'connections'), where('participants', 'array-contains', state.uid));
+    contactsUnsub = onSnapshot(q, (snap) => {
+      const listEl = document.getElementById('contactList');
+      const emptyEl = document.getElementById('contactsEmpty');
+      if(snap.empty){
+        listEl.innerHTML = '';
+        emptyEl.style.display = 'flex';
+        return;
+      }
+      emptyEl.style.display = 'none';
+      listEl.innerHTML = '';
+      snap.forEach(d => {
+        const data = d.data();
+        const otherUid = data.participants.find(p => p !== state.uid);
+        const info = data.userInfo?.[otherUid];
+        if(!info) return;
+        const avatarHtml = info.photoURL
+          ? `<img src="${info.photoURL}" alt="">`
+          : `<svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+        const row = document.createElement('div');
+        row.className = 'contact-row';
+        row.innerHTML = `
+          <div class="contact-row-avatar">${avatarHtml}</div>
+          <div class="contact-row-info">
+            <div class="contact-row-name">@${info.username}</div>
+            <div class="contact-row-id">${formatId(info.userId)}</div>
+          </div>`;
+        row.onclick = () => openChat(d.id, otherUid, info);
+        listEl.appendChild(row);
+      });
+    }, (err) => console.error('Contacts listener failed:', err));
+  }
+
+  // ---------------- CHAT / INBOX ----------------
+
+  function openChat(connId, otherUid, otherInfo){
+    activeChatConnId = connId;
+    document.getElementById('chatTitle').textContent = '@' + otherInfo.username;
+    document.getElementById('chatAvatar').innerHTML = otherInfo.photoURL
+      ? `<img src="${otherInfo.photoURL}" alt="">` : '';
+    document.getElementById('chatOverlay').classList.add('active');
+    document.getElementById('chatMessages').innerHTML = `<div class="chat-empty">Loading messages…</div>`;
+
+    if(activeChatUnsub) activeChatUnsub();
+    const q = query(collection(db, 'connections', connId, 'messages'), orderBy('createdAt', 'asc'));
+    activeChatUnsub = onSnapshot(q, (snap) => {
+      const box = document.getElementById('chatMessages');
+      if(snap.empty){
+        box.innerHTML = `<div class="chat-empty">Say hello — this is the start of your conversation.</div>`;
+        return;
+      }
+      box.innerHTML = '';
+      snap.forEach(d => {
+        const m = d.data();
+        const bubble = document.createElement('div');
+        bubble.className = 'msg-bubble ' + (m.senderUid === state.uid ? 'mine' : 'theirs');
+        bubble.textContent = m.text;
+        box.appendChild(bubble);
+      });
+      box.scrollTop = box.scrollHeight;
+    }, (err) => console.error('Chat listener failed:', err));
+  }
+  window.openChat = openChat;
+
+  function closeChat(){
+    document.getElementById('chatOverlay').classList.remove('active');
+    if(activeChatUnsub){ activeChatUnsub(); activeChatUnsub = null; }
+    activeChatConnId = null;
+  }
+  window.closeChat = closeChat;
+
+  async function sendMessage(){
+    const input = document.getElementById('chatInput');
+    const text = input.value.trim();
+    if(!text || !activeChatConnId) return;
+    input.value = '';
+    try{
+      await addDoc(collection(db, 'connections', activeChatConnId, 'messages'), {
+        senderUid: state.uid,
+        text: text,
+        createdAt: serverTimestamp()
+      });
+    } catch(err){
+      console.error('Send failed:', err);
+      alert('Could not send message: ' + err.message);
+    }
+  }
+  window.sendMessage = sendMessage;
 
   // Module scripts don't leak to global scope automatically —
   // expose the handlers the inline onclick="" attributes call.
