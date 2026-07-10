@@ -237,6 +237,102 @@
   .done-icon svg{width:24px; height:24px; stroke:var(--good);}
 
   input[type=file]{display:none;}
+
+  .save-msg{font-size:13px; min-height:16px; font-family:'Inter',sans-serif;}
+  .save-msg.err{color:var(--bad);}
+  .save-msg.ok{color:var(--good);}
+
+  /* ---------- APP HOME ---------- */
+  .app-home{
+    display:none;
+    position:fixed; inset:0;
+    background:var(--ink);
+    flex-direction:column;
+  }
+  .app-home.active{display:flex;}
+
+  .app-topbar{
+    display:flex; align-items:center;
+    padding:16px 20px;
+    border-bottom:1px solid var(--line);
+    flex-shrink:0;
+  }
+  .app-logo{
+    display:flex; align-items:center; gap:10px;
+    font-family:'Fraunces',serif; font-weight:500; font-size:18px;
+    color:var(--ivory);
+  }
+
+  .app-content{
+    flex:1;
+    overflow-y:auto;
+    padding:24px 20px 12px;
+    max-width:640px;
+    width:100%;
+    margin:0 auto;
+    box-sizing:border-box;
+  }
+
+  .tab-panel{display:none;}
+  .tab-panel.active{display:block; animation:rise .35s ease both;}
+
+  .tab-title{
+    font-family:'Fraunces',serif; font-size:22px; font-weight:500;
+    color:var(--ivory); margin-bottom:20px;
+  }
+
+  .empty-state{
+    display:flex; flex-direction:column; align-items:center; gap:12px;
+    text-align:center;
+    color:var(--slate);
+    font-size:13px; line-height:1.5;
+    padding:60px 20px;
+    border:1px dashed var(--line);
+    border-radius:14px;
+  }
+
+  .profile-card{
+    display:flex; flex-direction:column; align-items:center; gap:6px;
+    padding:32px 20px;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:16px;
+  }
+  .profile-avatar{
+    width:84px; height:84px; border-radius:50%;
+    background:var(--panel-raised);
+    border:2px solid var(--brass);
+    display:flex; align-items:center; justify-content:center;
+    overflow:hidden;
+    margin-bottom:10px;
+  }
+  .profile-avatar svg{width:32px; height:32px; stroke:var(--slate-dim);}
+  .profile-avatar img{width:100%; height:100%; object-fit:cover;}
+  .profile-name{font-family:'Fraunces',serif; font-size:19px; color:var(--ivory);}
+  .profile-email{font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--slate);}
+
+  .bottom-nav{
+    display:flex;
+    border-top:1px solid var(--line);
+    background:var(--panel);
+    flex-shrink:0;
+    padding-bottom:env(safe-area-inset-bottom, 0);
+  }
+  .nav-item{
+    flex:1;
+    display:flex; flex-direction:column; align-items:center; gap:4px;
+    background:none; border:none;
+    padding:10px 0 12px;
+    cursor:pointer;
+    color:var(--slate-dim);
+    font-family:'Inter',sans-serif; font-size:11px; font-weight:600;
+    transition:color .2s ease;
+  }
+  .nav-item svg{width:22px; height:22px; stroke:var(--slate-dim); transition:stroke .2s ease;}
+  .nav-item.active{color:var(--brass);}
+  .nav-item.active svg{stroke:var(--brass);}
+  .nav-item:hover{color:var(--ivory);}
+  .nav-item:hover svg{stroke:var(--ivory);}
 </style>
 </head>
 <body>
@@ -315,30 +411,68 @@
       </div>
 
       <button class="primary-btn" id="finishBtn" disabled onclick="handleFinish()">Create profile</button>
+      <div class="save-msg" id="saveMsg"></div>
     </div>
 
-    <!-- STEP 4: DONE -->
-    <div class="step" id="step4">
-      <div class="done-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-      </div>
-      <div class="eyebrow">Complete</div>
-      <h1 id="doneHeadline">You're in.</h1>
-      <p class="lede" id="doneSub">Your profile has been created. The card on the left is now yours.</p>
-      <div class="ghost-note">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-        <span>Google account connected</span>
-      </div>
-      <div class="ghost-note">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-        <span>Access code verified</span>
-      </div>
-      <div class="ghost-note">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-        <span id="doneUsernameNote">Profile ready</span>
+  </div>
+</div>
+
+<!-- ============ APP HOME (shown after onboarding completes) ============ -->
+<div class="app-home" id="appHome">
+  <div class="app-topbar">
+    <div class="app-logo">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="var(--brass)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+      <span>Wide Window</span>
+    </div>
+  </div>
+
+  <div class="app-content">
+
+    <!-- CONTACTS TAB -->
+    <div class="tab-panel active" id="tabContacts">
+      <div class="tab-title">Contacts</div>
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="var(--slate-dim)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <p>No contacts yet. People you connect with will show up here.</p>
       </div>
     </div>
 
+    <!-- GROUPS TAB -->
+    <div class="tab-panel" id="tabGroups">
+      <div class="tab-title">Groups</div>
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="var(--slate-dim)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <p>No groups yet. Create or join one to start chatting.</p>
+      </div>
+    </div>
+
+    <!-- PROFILE TAB -->
+    <div class="tab-panel" id="tabProfile">
+      <div class="tab-title">Profile</div>
+      <div class="profile-card">
+        <div class="profile-avatar" id="profileAvatar">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <div class="profile-name" id="profileName">—</div>
+        <div class="profile-email" id="profileEmail">—</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="bottom-nav">
+    <button class="nav-item active" data-tab="Contacts" onclick="switchTab('Contacts')">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span>Contacts</span>
+    </button>
+    <button class="nav-item" data-tab="Groups" onclick="switchTab('Groups')">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span>Groups</span>
+    </button>
+    <button class="nav-item" data-tab="Profile" onclick="switchTab('Profile')">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+      <span>Profile</span>
+    </button>
   </div>
 </div>
 
@@ -518,30 +652,60 @@
 
   async function handleFinish(){
     const finishBtn = document.getElementById('finishBtn');
+    const saveMsg = document.getElementById('saveMsg');
     finishBtn.disabled = true;
     finishBtn.textContent = 'Saving…';
+    saveMsg.textContent = '';
+    saveMsg.className = 'save-msg';
+
     try{
       if(state.uid){
-        await setDoc(doc(db, 'users', state.uid), {
-          username: state.username.toLowerCase(),
-          email: state.email,
-          accessCodeVerified: true,
-          photoURL: state.photo,
-          createdAt: new Date().toISOString()
-        });
+        // Race the write against a timeout so the button never hangs
+        // forever if Firestore isn't set up yet.
+        const timeout = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Timed out after 10s — check that Firestore is created and its rules allow this write.')), 10000)
+        );
+        await Promise.race([
+          setDoc(doc(db, 'users', state.uid), {
+            username: state.username.toLowerCase(),
+            email: state.email,
+            accessCodeVerified: true,
+            photoURL: state.photo,
+            createdAt: new Date().toISOString()
+          }),
+          timeout
+        ]);
       }
       setPunch(3);
-      document.getElementById('cardId').textContent = 'ID · '+ (state.uid ? state.uid.slice(0,8).toUpperCase() : Math.random().toString(36).slice(2,8).toUpperCase());
-      document.getElementById('doneHeadline').textContent = 'Welcome, ' + state.username + '.';
-      document.getElementById('doneUsernameNote').textContent = '@'+state.username.toLowerCase()+' is live';
-      showStep(4);
+      revealAppHome();
     } catch(err){
-      console.error(err);
-      alert('Could not save your profile: ' + err.message + '\n\nCheck your Firestore rules allow this write.');
+      console.error('Save failed:', err);
+      saveMsg.textContent = 'Could not save: ' + err.message;
+      saveMsg.className = 'save-msg err';
       finishBtn.disabled = false;
       finishBtn.textContent = 'Create profile';
     }
   }
+
+  function revealAppHome(){
+    document.querySelector('.stage').style.display = 'none';
+    const home = document.getElementById('appHome');
+    home.classList.add('active');
+
+    document.getElementById('profileName').textContent = state.username;
+    document.getElementById('profileEmail').textContent = state.email || '';
+    if(state.photo){
+      const html = `<img src="${state.photo}" alt="Profile photo">`;
+      document.getElementById('profileAvatar').innerHTML = html;
+    }
+  }
+
+  function switchTab(name){
+    document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active', b.dataset.tab===name));
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+    document.getElementById('tab'+name).classList.add('active');
+  }
+  window.switchTab = switchTab;
 
   // Module scripts don't leak to global scope automatically —
   // expose the handlers the inline onclick="" attributes call.
