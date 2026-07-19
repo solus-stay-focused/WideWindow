@@ -444,6 +444,25 @@
   .pp-hint{ font-size:11px; color:var(--muted); margin-top:6px; }
   .preview-card .p-sub{ font-size:10.5px; color:var(--muted); margin-top:2px; }
 
+  .add-tabs{ display:flex; gap:6px; margin-bottom:16px; background:var(--panel); border-radius:999px; padding:4px; }
+  .add-tab{
+    flex:1; padding:8px 10px; border:none; border-radius:999px; background:transparent;
+    color:var(--muted); font-size:12px; font-weight:600; cursor:pointer; transition:background .15s ease, color .15s ease;
+  }
+  .add-tab.active{ background:linear-gradient(135deg, var(--violet), var(--violet-bright)); color:#fff; }
+  .add-tab-panel{ margin-bottom:2px; }
+  .file-drop{
+    display:block; border:1.5px dashed rgba(255,255,255,0.18); border-radius:var(--radius-sm);
+    padding:18px; text-align:center; font-size:12px; color:var(--muted); cursor:pointer;
+    transition:border-color .2s ease, background .2s ease;
+  }
+  .file-drop:hover{ border-color:var(--violet-bright); background:var(--panel-2); }
+  .file-name{ margin-top:8px; font-size:12px; font-weight:600; color:var(--text); }
+  .upload-progress-track{
+    display:none; height:6px; border-radius:999px; background:rgba(255,255,255,0.08); margin-top:12px; overflow:hidden;
+  }
+  .upload-progress-fill{ height:100%; width:0%; background:linear-gradient(135deg, var(--violet), var(--violet-bright)); transition:width .15s ease; }
+
   body{ padding-bottom:74px; }
 
   @media (max-width:1200px){
@@ -649,6 +668,7 @@
 </div>
 
 <div id="yt-hidden"><div id="yt-player"></div></div>
+<audio id="native-player" preload="none" style="display:none;"></audio>
 
 <!-- ============ ACCOUNT MODAL ============ -->
 <div class="modal-backdrop" id="login-modal">
@@ -710,11 +730,33 @@
     <button class="modal-close" data-close="add-modal">×</button>
     <h3>Add a track</h3>
     <p class="modal-sub" id="add-modal-sub">Paste a YouTube URL — title and artwork are pulled automatically.</p>
-    <div class="field"><label>YouTube URL</label><input type="text" id="yt-url" placeholder="https://www.youtube.com/watch?v=..."></div>
-    <div class="preview-card" id="preview-card" style="display:none;">
-      <img id="preview-img" src="">
-      <div><div class="p-title" id="preview-title"></div><div class="p-sub" id="preview-sub"></div></div>
+
+    <div class="add-tabs">
+      <button type="button" class="add-tab active" id="tab-btn-youtube" data-tab="youtube">YouTube link</button>
+      <button type="button" class="add-tab" id="tab-btn-upload" data-tab="upload">Upload audio file</button>
     </div>
+
+    <div class="add-tab-panel" id="tab-panel-youtube">
+      <div class="field"><label>YouTube URL</label><input type="text" id="yt-url" placeholder="https://www.youtube.com/watch?v=..."></div>
+      <div class="preview-card" id="preview-card" style="display:none;">
+        <img id="preview-img" src="">
+        <div><div class="p-title" id="preview-title"></div><div class="p-sub" id="preview-sub"></div></div>
+      </div>
+    </div>
+
+    <div class="add-tab-panel" id="tab-panel-upload" style="display:none;">
+      <div class="field"><label>Title</label><input type="text" id="up-title" maxlength="120" placeholder="e.g. Surah Al-Mulk — recitation"></div>
+      <div class="field">
+        <label>Audio file</label>
+        <label class="file-drop" id="file-drop">
+          🎧 Tap to choose an audio file (MP3, M4A, WAV — up to 50MB)
+          <input type="file" id="up-file-input" accept="audio/*" style="display:none;">
+        </label>
+        <div class="file-name" id="up-file-name"></div>
+        <div class="upload-progress-track" id="up-progress-track"><div class="upload-progress-fill" id="up-progress-fill"></div></div>
+      </div>
+    </div>
+
     <div class="field">
       <label>Category</label>
       <select id="yt-category">
@@ -734,10 +776,12 @@
   </div>
 </div>
 
+
 <!-- Firebase compat SDK, classic global-scope scripts -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 
 <script>
 // =========================================================
@@ -773,6 +817,8 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
+const storage = firebase.storage();
+const MAX_AUDIO_MB = 50;
 
 // Emails allowed to add/manage tracks
 const ADMIN_EMAILS = ["you@example.com"];
@@ -1113,18 +1159,38 @@ auth.onAuthStateChanged(async user=>{
   refreshUserUI(user);
 });
 
+let addTab = 'youtube';
+
+function setAddTab(tab){
+  addTab = tab;
+  document.getElementById('tab-btn-youtube').classList.toggle('active', tab === 'youtube');
+  document.getElementById('tab-btn-upload').classList.toggle('active', tab === 'upload');
+  document.getElementById('tab-panel-youtube').style.display = tab === 'youtube' ? 'block' : 'none';
+  document.getElementById('tab-panel-upload').style.display = tab === 'upload' ? 'block' : 'none';
+  document.getElementById('add-submit').textContent = tab === 'youtube' ? 'Fetch & save' : '⬆ Upload';
+  document.getElementById('add-status').textContent = '';
+}
+document.getElementById('tab-btn-youtube').addEventListener('click', ()=> setAddTab('youtube'));
+document.getElementById('tab-btn-upload').addEventListener('click', ()=> setAddTab('upload'));
+
 document.getElementById('add-track-btn').addEventListener('click', ()=>{
   document.getElementById('yt-url').value = "";
   document.getElementById('preview-card').style.display = "none";
+  document.getElementById('up-title').value = "";
+  document.getElementById('up-file-input').value = "";
+  document.getElementById('up-file-name').textContent = "";
+  document.getElementById('up-progress-track').style.display = "none";
+  document.getElementById('up-progress-fill').style.width = "0%";
   document.getElementById('add-status').textContent = "";
   pendingPreview = null;
+  setAddTab('youtube');
   document.getElementById('add-modal-sub').textContent = isAdmin
-    ? "Paste a YouTube URL — title and artwork are pulled automatically."
-    : "Paste a YouTube URL — title and artwork are pulled automatically. Your submission is reviewed before it appears in the library.";
+    ? "Paste a YouTube URL or upload an audio file — title and artwork are pulled automatically for YouTube links."
+    : "Paste a YouTube URL or upload an audio file. Your submission is reviewed before it appears in the library.";
   openModal('add-modal');
 });
 
-// ---------- Add track ----------
+// ---------- Add track: YouTube link ----------
 function extractVideoId(url){
   const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/);
   return m ? m[1] : null;
@@ -1152,24 +1218,88 @@ document.getElementById('yt-url').addEventListener('input', async (e)=>{
   }
 });
 
+// ---------- Add track: file upload ----------
+document.getElementById('up-file-input').addEventListener('change', (e)=>{
+  const file = e.target.files && e.target.files[0];
+  const nameEl = document.getElementById('up-file-name');
+  if(!file){ nameEl.textContent = ""; return; }
+  const mb = (file.size / (1024*1024)).toFixed(1);
+  nameEl.textContent = `${file.name} · ${mb} MB`;
+});
+
+function saveTrackDoc(data){
+  return db.collection('tracks').add({
+    ...data, approved: isAdmin, addedBy: auth.currentUser.email,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+}
+
+async function submitYouTubeTrack(statusEl){
+  if(!pendingPreview){ statusEl.textContent = "Paste a valid YouTube URL first."; statusEl.className="status-msg err"; return false; }
+  const category = document.getElementById('yt-category').value;
+  statusEl.textContent = "Saving..."; statusEl.className = "status-msg";
+  await saveTrackDoc({
+    source:'youtube', videoId: pendingPreview.videoId, title: pendingPreview.title,
+    channel: pendingPreview.channel, thumb: pendingPreview.thumb, category
+  });
+  return true;
+}
+
+async function submitUploadTrack(statusEl){
+  const title = document.getElementById('up-title').value.trim();
+  const file = document.getElementById('up-file-input').files[0];
+  const category = document.getElementById('yt-category').value;
+  const track = document.getElementById('up-progress-track');
+  const fill = document.getElementById('up-progress-fill');
+
+  if(!title){ statusEl.textContent = "Give it a title first."; statusEl.className="status-msg err"; return false; }
+  if(!file){ statusEl.textContent = "Choose an audio file first."; statusEl.className="status-msg err"; return false; }
+  if(!file.type.startsWith('audio/')){ statusEl.textContent = "That file doesn't look like audio."; statusEl.className="status-msg err"; return false; }
+  if(file.size > MAX_AUDIO_MB * 1024 * 1024){ statusEl.textContent = `Keep it under ${MAX_AUDIO_MB}MB.`; statusEl.className="status-msg err"; return false; }
+
+  statusEl.textContent = "Uploading..."; statusEl.className = "status-msg";
+  track.style.display = "block"; fill.style.width = "0%";
+
+  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+  const path = `audioLibrary/${category}/${auth.currentUser.uid}_${Date.now()}_${safeName}`;
+  const fileRef = storage.ref(path);
+  const task = fileRef.put(file, { contentType: file.type });
+
+  await new Promise((resolve, reject)=>{
+    task.on('state_changed',
+      (snap)=>{
+        const pct = snap.totalBytes ? Math.round((snap.bytesTransferred/snap.totalBytes)*100) : 0;
+        fill.style.width = pct + '%';
+      },
+      reject,
+      async ()=>{
+        try{
+          const url = await task.snapshot.ref.getDownloadURL();
+          await saveTrackDoc({
+            source:'upload', audioUrl:url, storagePath:path, title, category, sizeBytes:file.size
+          });
+          resolve();
+        }catch(err){ reject(err); }
+      }
+    );
+  });
+  return true;
+}
+
 document.getElementById('add-submit').addEventListener('click', async ()=>{
   const statusEl = document.getElementById('add-status');
   if(!auth.currentUser){ statusEl.textContent = "Sign in first."; statusEl.className="status-msg err"; return; }
-  if(!pendingPreview){ statusEl.textContent = "Paste a valid YouTube URL first."; statusEl.className="status-msg err"; return; }
-  const category = document.getElementById('yt-category').value;
-  statusEl.textContent = "Saving..."; statusEl.className = "status-msg";
+
   try{
-    // Anyone signed in can submit a track. Admin submissions go live
-    // immediately; everyone else's are saved with approved:false so
-    // they're held for review before loadTracks() (which only reads
-    // approved==true) will ever surface them. Build an admin review
-    // view against tracks where approved==false when you're ready to
-    // moderate the queue.
-    await db.collection('tracks').add({
-      videoId: pendingPreview.videoId, title: pendingPreview.title, channel: pendingPreview.channel,
-      thumb: pendingPreview.thumb, category, approved:isAdmin, addedBy: auth.currentUser.email,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
+    // Anyone signed in can submit a track (YouTube link or an uploaded
+    // audio file). Admin submissions go live immediately; everyone
+    // else's are saved with approved:false so they're held for review
+    // before loadTracks() (which only reads approved==true) will ever
+    // surface them. Build an admin review view against tracks where
+    // approved==false when you're ready to moderate the queue.
+    const ok = addTab === 'youtube' ? await submitYouTubeTrack(statusEl) : await submitUploadTrack(statusEl);
+    if(!ok) return;
+
     statusEl.textContent = isAdmin ? "Saved." : "Submitted for review — it'll appear once approved.";
     statusEl.className = "status-msg ok";
     setTimeout(()=>{ closeModal('add-modal'); loadTracks(); }, 900);
@@ -1323,6 +1453,27 @@ function setPlayIcons(playing){
   document.getElementById('play-icon-2').innerHTML = icon;
 }
 
+const nativePlayer = document.getElementById('native-player');
+function isUploadTrack(t){ return !!(t && t.source === 'upload' && t.audioUrl); }
+
+function updateSeekUI(cur, dur){
+  if(!isFinite(dur) || dur <= 0) return;
+  [document.getElementById('seek'), document.getElementById('seek-2')].forEach(s=>{ s.max = dur; s.value = cur; });
+  document.getElementById('time-current').textContent = formatTime(cur);
+  document.getElementById('time-total').textContent = formatTime(dur);
+  document.getElementById('time-current-2').textContent = formatTime(cur);
+  document.getElementById('time-total-2').textContent = formatTime(dur);
+}
+
+nativePlayer.addEventListener('play', ()=> setPlayIcons(true));
+nativePlayer.addEventListener('pause', ()=> setPlayIcons(false));
+nativePlayer.addEventListener('timeupdate', ()=> updateSeekUI(nativePlayer.currentTime, nativePlayer.duration));
+nativePlayer.addEventListener('loadedmetadata', ()=> updateSeekUI(nativePlayer.currentTime, nativePlayer.duration));
+nativePlayer.addEventListener('ended', ()=>{
+  if(repeatOn){ nativePlayer.currentTime = 0; nativePlayer.play().catch(()=>{}); }
+  else playNext();
+});
+
 function onPlayerStateChange(e){
   if(e.data === YT.PlayerState.PLAYING){ setPlayIcons(true); startSeekPolling(); }
   else if(e.data === YT.PlayerState.PAUSED){ setPlayIcons(false); stopSeekPolling(); }
@@ -1373,11 +1524,20 @@ function loadCurrent(){
   renderSuggested();
   pushRecent(t.id);
 
-  if(ytReady && ytPlayer && ytPlayer.loadVideoById){
-    ytPlayer.loadVideoById(t.videoId);
-    ytPlayer.playVideo();
+  if(isUploadTrack(t)){
+    stopSeekPolling();
+    if(ytReady && ytPlayer && ytPlayer.stopVideo) ytPlayer.stopVideo();
+    nativePlayer.src = t.audioUrl;
+    nativePlayer.currentTime = 0;
+    nativePlayer.play().catch(()=>{});
   } else {
-    setTimeout(loadCurrent, 400);
+    nativePlayer.pause();
+    if(ytReady && ytPlayer && ytPlayer.loadVideoById){
+      ytPlayer.loadVideoById(t.videoId);
+      ytPlayer.playVideo();
+    } else {
+      setTimeout(loadCurrent, 400);
+    }
   }
 }
 
@@ -1395,6 +1555,11 @@ function playNext(){ if(currentQueue.length===0) return; currentIndex = pickNext
 function playPrev(){ if(currentQueue.length===0) return; currentIndex = (currentIndex - 1 + currentQueue.length) % currentQueue.length; loadCurrent(); }
 
 function togglePlay(){
+  const t = currentQueue[currentIndex];
+  if(isUploadTrack(t)){
+    if(nativePlayer.paused) nativePlayer.play().catch(()=>{}); else nativePlayer.pause();
+    return;
+  }
   if(!ytPlayer || !ytReady) return;
   const state = ytPlayer.getPlayerState();
   if(state === YT.PlayerState.PLAYING) ytPlayer.pauseVideo(); else ytPlayer.playVideo();
@@ -1422,36 +1587,38 @@ function startSeekPolling(){
   stopSeekPolling();
   seekPoll = setInterval(()=>{
     if(!ytPlayer || !ytPlayer.getCurrentTime) return;
-    const cur = ytPlayer.getCurrentTime(), dur = ytPlayer.getDuration();
-    if(dur > 0){
-      [document.getElementById('seek'), document.getElementById('seek-2')].forEach(s=>{ s.max = dur; s.value = cur; });
-      document.getElementById('time-current').textContent = formatTime(cur);
-      document.getElementById('time-total').textContent = formatTime(dur);
-      document.getElementById('time-current-2').textContent = formatTime(cur);
-      document.getElementById('time-total-2').textContent = formatTime(dur);
-    }
+    updateSeekUI(ytPlayer.getCurrentTime(), ytPlayer.getDuration());
   }, 500);
 }
 function stopSeekPolling(){ if(seekPoll) clearInterval(seekPoll); }
 
 [document.getElementById('seek'), document.getElementById('seek-2')].forEach(s=>{
-  s.addEventListener('input', (e)=>{ if(ytPlayer && ytPlayer.seekTo) ytPlayer.seekTo(Number(e.target.value), true); });
+  s.addEventListener('input', (e)=>{
+    const t = currentQueue[currentIndex];
+    const val = Number(e.target.value);
+    if(isUploadTrack(t)) nativePlayer.currentTime = val;
+    else if(ytPlayer && ytPlayer.seekTo) ytPlayer.seekTo(val, true);
+  });
 });
 document.getElementById('volume').addEventListener('input', (e)=>{
-  if(ytPlayer && ytPlayer.setVolume) ytPlayer.setVolume(Number(e.target.value));
+  const v = Number(e.target.value);
+  nativePlayer.volume = v / 100;
+  if(ytPlayer && ytPlayer.setVolume) ytPlayer.setVolume(v);
 });
 
 let mutedBeforeVolume = 80;
 document.getElementById('mute-btn').addEventListener('click', ()=>{
   const volumeSlider = document.getElementById('volume');
-  if(!ytPlayer) return;
-  if(ytPlayer.isMuted && ytPlayer.isMuted()){
-    ytPlayer.unMute();
-    ytPlayer.setVolume(mutedBeforeVolume);
+  const currentlyMuted = nativePlayer.muted || (ytPlayer && ytPlayer.isMuted && ytPlayer.isMuted());
+  if(currentlyMuted){
+    nativePlayer.muted = false;
+    nativePlayer.volume = mutedBeforeVolume / 100;
+    if(ytPlayer && ytPlayer.unMute){ ytPlayer.unMute(); ytPlayer.setVolume(mutedBeforeVolume); }
     volumeSlider.value = mutedBeforeVolume;
   } else {
     mutedBeforeVolume = Number(volumeSlider.value) || 80;
-    ytPlayer.mute();
+    nativePlayer.muted = true;
+    if(ytPlayer && ytPlayer.mute) ytPlayer.mute();
     volumeSlider.value = 0;
   }
 });
