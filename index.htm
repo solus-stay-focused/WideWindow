@@ -1463,7 +1463,7 @@
         if (user){ myUid = user.uid; unsub(); resolve(); }
       });
       auth.signInAnonymously().catch((err) => {
-        setStatus('AUTH ERROR — CHECK CONSOLE', true);
+        setStatus('AUTH ERROR: ' + (err && err.code ? err.code : err && err.message ? err.message : 'unknown'), true);
         console.error('Firebase anonymous auth failed:', err);
       });
     });
